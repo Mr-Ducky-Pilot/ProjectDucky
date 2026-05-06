@@ -4,6 +4,36 @@ Modular work plan for the 3-week MVP. Tasks are grouped into **phases** (gate th
 
 **Legend:** ⬜ todo · 🟨 in progress · ✅ done · 🚧 blocked · 🔄 needs revisit
 
+---
+
+### Snapshot — what's already built
+
+**Stack:** SvelteKit 2 + Svelte 5 (runes) + TypeScript + Tailwind v4. npm.
+
+**Done in the first execution pass:**
+- Duolingo-style landing page (mobile-first, hero / box contents / journey
+  map / claims / audience toggle / final CTA).
+- App shell: sticky header, journey map page, level pages, dynamic mission
+  pages, connect page, dev component gallery.
+- Modular **mission framework** with filesystem auto-discovery
+  (`import.meta.glob`) — adding a mission = drop a folder under
+  `src/lib/levels/<level>/missions/<id>/` with `mission.meta.ts`,
+  `concept.md`, optional `Interactive.svelte`. Zero registration.
+- Mock WebUSB layer with synthetic sensor streams + flash-progress sim,
+  selected by `VITE_USE_MOCK_USB`. Real DAPjs adapter stubbed.
+- Universal-listener wire protocol (`src/lib/webusb/protocol.ts`).
+- 7-mood inline-SVG Ducky character with idle bob, swappable file-for-file
+  with real illustrations later.
+- All 10 Level-0 + all 5 Level-1 mission browser companions + concept cards.
+
+**Blocked on M0 hardware validation:**
+- Producing real `.hex` firmware files (per-mission for L0; one universal
+  "Ducky OS" listener for L1+).
+- Flipping `VITE_USE_MOCK_USB=false` to use the real DAPjs adapter.
+
+**See `src/routes/dev/components/+page.svelte`** for a one-page sanity
+check of every shared component + a directory of all missions.
+
 
 ---
 
@@ -26,39 +56,57 @@ Modular work plan for the 3-week MVP. Tasks are grouped into **phases** (gate th
 ### M1 · App Shell & Routing
 **Goal:** Empty but navigable shell with brand applied.
 
-- ⬜ Initialise Vite + React + TS + Tailwind
-- ⬜ Set up React Router with placeholder pages
-- ⬜ Routes: `/`, `/journey`, `/level/:id`, `/mission/:id`, `/lab/:level`, `/sandbox`
-- ⬜ Layout component (header with Ducky avatar + level indicator, main, footer)
-- ⬜ Theme tokens (colours, fonts, spacing) in Tailwind config
-- ⬜ `useProgress` hook backed by `localStorage`
-- ⬜ Zustand store for app-wide state
-- ⬜ Empty Ducky placeholder component
+> **Stack note (decided after planning):** front-end is **SvelteKit 2 + Svelte 5
+> (runes mode) + TypeScript + Tailwind v4**. Replaces the originally proposed
+> React/Vite/Zustand stack. Reasons: built-in `spring`/`tweened`/`crossfade`
+> covers Duolingo-feel without Framer Motion; smaller bundle for school
+> Chromebooks; Svelte stores fit hardware state better than `useEffect`. DAPjs
+> + the eventual MakeCode iframe are framework-agnostic so we lose nothing.
+
+- ✅ Initialise SvelteKit + TS + Tailwind v4 (npm)
+- ✅ Filesystem router with placeholder pages
+- ✅ Routes: `/`, `/journey`, `/level/[level]`, `/mission/[level]/[mission]`, `/connect`, `/dev/components` (+ planned `/lab/[level]`, `/sandbox`)
+- ✅ Layout component (sticky header with Ducky brand + nav, no header on landing)
+- ✅ Theme tokens (`duck-yellow`, `pond-blue`, `egg-cream`, `sunset-coral`, `leaf-green`, `night-ink`) in `src/app.css` via Tailwind v4 `@theme`
+- ✅ `progress` Svelte store backed by `localStorage` (replaces `useProgress` hook)
+- ✅ Svelte stores for app-wide state (`connection`, `ducky`, `progress`) — replaces Zustand
+- ✅ Inline-SVG Ducky placeholder component with 7 mood variants (idle/excited/thinking/celebrating/curious/sleepy/sad)
 - ⬜ Deploy to staging (Vercel/Cloudflare)
 
 ### M2 · WebUSB Connection Layer
 **Goal:** Reliable "Connect Ducky" button anywhere in the app.
 
-- ⬜ Integrate DAPjs
-- ⬜ Connect / disconnect button with clear states (idle, requesting, connected, error)
-- ⬜ Flash a `.hex` file from URL
-- ⬜ Read serial output from Micro:bit (for debugging + later level use)
-- ⬜ Persistent connection across route changes (Zustand)
-- ⬜ Friendly error messages (Ducky-narrated)
+> **Hex strategy (added after planning):** We ship a hybrid of two approaches.
+> Level 0 missions get **dedicated per-mission hex** — kid flashes once, board
+> works standalone even unplugged (preserves the "real toy" feeling). Level 1+
+> missions use a **single "Ducky OS" universal-listener hex** that listens on
+> serial; the browser sends typed commands (`M:01010...`, `T:C4,200;E4,400`,
+> `S?accel`) and the device pushes events back (`<S accel 0.12,...>`). Faster
+> iteration, no flash per parameter tweak. Wire format lives in
+> `src/lib/webusb/protocol.ts`.
+
+- ⬜ Integrate DAPjs (real adapter — currently stubbed in `src/lib/webusb/dapjs.ts`)
+- ✅ Mock WebUSB adapter (`src/lib/webusb/mock.ts`) so the whole UI is buildable + reviewable without hardware. Selected via `VITE_USE_MOCK_USB`.
+- ✅ Connect / disconnect button with clear states (idle, requesting, connected, error, flashing) — `ConnectionBar.svelte` + `/connect` page
+- ✅ Flash a `.hex` file from URL (mock simulates progress; real adapter pending M0)
+- ⬜ Read serial output from Micro:bit (mock emits synthetic streams; real serial pending M0)
+- ✅ Persistent connection across route changes (Svelte store + adapter singleton)
+- ✅ Friendly error messages (Ducky-narrated)
 - ⬜ Browser compatibility check on app load — friendly Chrome/Edge message for unsupported browsers
 - ⬜ Test with two Micro:bits connected simultaneously
+- ✅ Universal-listener wire protocol implemented (`src/lib/webusb/protocol.ts`)
 
 ### M3 · Ducky Character System
 **Goal:** Ducky reacts to navigation and events with personality.
 
-- ⬜ Sketch Ducky base illustration (vector)
-- ⬜ Six emotion variants: idle, excited, thinking, celebrating, curious, sleepy
-- ⬜ React `<Ducky>` component with state-driven emotion prop
-- ⬜ Speech-bubble component with typing animation (Framer Motion)
-- ⬜ Dialogue script structure (`/data/dialogue.json`, easy to edit)
-- ⬜ First batch of dialogue lines for navigation events
+- ⬜ Real Ducky base illustration (vector) — placeholders shipped meanwhile
+- ✅ Seven emotion variants: idle, excited, thinking, celebrating, curious, sleepy, sad (placeholder geometric SVG; swap real art file-for-file later, no code change)
+- ✅ Svelte `<Ducky>` component with state-driven `mood` prop + idle bob via CSS keyframes
+- ✅ Speech-bubble component with typewriter animation (Svelte `$effect` + `setInterval`, no Framer Motion needed)
+- ✅ Dialogue script structure (`src/lib/data/dialogue.json`, easy to edit)
+- ✅ First batch of dialogue lines for navigation/connect events
 - ⬜ "Things Ducky never says" linter (avoid words like "wrong", "fail", "incorrect")
-- ⬜ Floating Ducky present across app, position-aware (corners, etc.)
+- ⬜ Floating Ducky present across app, position-aware (corners, etc.) — currently per-page
 
 ---
 
@@ -67,30 +115,39 @@ Modular work plan for the 3-week MVP. Tasks are grouped into **phases** (gate th
 ### M4 · Level 0: The Egg
 **Goal:** First 10 minutes from unbox to wow. **Polish: HIGH.**
 
-- ⬜ Pre-compile hex: "Ducky Says Hi" (OLED waving + name display + chirp)
-- ⬜ Pre-compile hex for L0-02 Heartbeat
-- ⬜ Pre-compile hex for L0-03 Tap to Wake
-- ⬜ Pre-compile hex for L0-04 Shake to Wake
-- ⬜ Pre-compile hex for L0-05 Cold Hands
-- ⬜ Pre-compile hex for L0-06 Hide & Peek
-- ⬜ Pre-compile hex for L0-07 Whisper or Shout
-- ⬜ Pre-compile hex for L0-08 Wave Across (pair, radio)
+> **Browser-side companions are in.** All 10 Level-0 missions have a working
+> mission card, ducky intro, concept "why this works" explainer, and an
+> Interactive component running against the mock device. What's pending is
+> the actual `.hex` firmware to flash — blocked on M0 hardware validation.
+
+- ✅ Browser companion: 01 Ducky Says Hi (name input → scrolling matrix preview + serial command)
+- ✅ Browser companion: 02 Heartbeat (animated big/small heart on virtual matrix)
+- ✅ Browser companion: 03 Tap to Wake (ripple animation, listens for radio button events)
+- ✅ Browser companion: 04 Shake (3-axis live meters from accel stream)
+- ✅ Browser companion: 05 Cold Hands (Thermometer widget, live temp stream)
+- ✅ Browser companion: 06 Hide & Peek (light meter + Ducky mood mirroring)
+- ✅ Browser companion: 07 Whisper or Shout (VolumeMeter + matrix bargraph)
+- ✅ Browser companion: 08 Touch Logo (Ducky celebrates on touch event)
+- ✅ Browser companion: 09 Compass Quest (CompassDial with cardinal direction)
+- ✅ Browser companion: 10 Wave Across (two-duck pair UI; loopback in mock for solo dev)
+- ⬜ Pre-compile hex for L0-01 through L0-10 (blocked on M0)
 - ⬜ Onboarding flow: detect device → flash hex → confirm success
-- ⬜ Name input UI → flashed to device
-- ⬜ Celebration moment when Ducky waves on OLED
-- ⬜ Mission card UI (basic: title, story, quest, "send to device" button)
+- ✅ Name input UI (writes to progress store; will flash to device once hex exists)
+- ✅ Celebration moment when Ducky waves on OLED (Ducky mood swaps to `celebrating` after flash)
+- ✅ Mission card UI (title, oneLiner, hardware tags, pair badge, completion checkmark, ~min estimate)
 - ⬜ Add **Lab Mode (L0 — "Discovery Mode")** with all-sensors hex
 
 ### M5 · Level 1: Hatch
 **Goal:** Tweak parameters, see code react. **Polish: HIGH.**
 
-- ⬜ Parameter-tweak UI components (sliders, colour pickers, dropdowns, toggles)
-- ⬜ Decide approach: pre-compiled hex variants per parameter set OR runtime hex patching
-- ⬜ Build L1-01 Mood Ring (sensor-pick + threshold slider)
-- ⬜ Build L1-02 Welcome Jingle (note picker)
-- ⬜ Build L1-03 Light Theremin (scale picker)
-- ⬜ Build L1-09 Reaction Tester
-- ⬜ Ducky reacts when user changes a parameter (small animation)
+- ✅ Parameter-tweak UI components: sliders (`Mood Ring`), pill selectors (`Light Theremin`), piano (`Welcome Jingle`), drawing pad (`Drawing Pad`)
+- ✅ **Approach decided:** universal-listener hex (one firmware, browser sends typed commands over serial). See M2 stack note.
+- ✅ Build L1-11 Drawing Pad — paint 5×5 in browser → live beam to chip via `M:` command
+- ✅ Build L1-12 Mood Ring (sensor-pick + threshold slider; live happy/sad mood swap)
+- ✅ Build L1-13 Welcome Jingle (PianoKeys + tone-sequence command + browser preview via WebAudio)
+- ✅ Build L1-14 Light Theremin (scale picker, live light→pitch mapping; browser preview + chip tone)
+- ✅ Build L1-15 Reaction Tester (countdown → green flash → ms timing + best score)
+- ✅ Ducky reacts when user changes a parameter (mood store + speech-bubble cheer on flash)
 - ⬜ Add **Lab Mode (L1 — "Tweak Anything")**
 
 ---

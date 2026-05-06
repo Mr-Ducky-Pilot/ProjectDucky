@@ -1,0 +1,188 @@
+@import 'tailwindcss';
+
+/* Ducky design tokens — Duolingo-feel: friendly, rounded, vibrant accents on cream. */
+@theme {
+	--color-egg-cream: #fff8ec;
+	--color-egg-cream-2: #fff1d9;
+	--color-duck-yellow: #ffd23a;
+	--color-duck-yellow-deep: #f5b301;
+	--color-pond-blue: #4cc1ff;
+	--color-pond-deep: #1f6fb2;
+	--color-leaf-green: #7ad44b;
+	--color-leaf-deep: #4ea126;
+	--color-sunset-coral: #ff7a6b;
+	--color-sunset-deep: #e6463a;
+	--color-night-ink: #1f2333;
+	--color-night-soft: #3a3f55;
+	--color-mist: #eef0f5;
+
+	--font-display: 'Nunito', 'Quicksand', system-ui, -apple-system, 'Segoe UI', sans-serif;
+	--font-sans: 'Nunito', system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+	--radius-2xl: 1.25rem;
+	--radius-3xl: 1.75rem;
+	--radius-blob: 2.25rem;
+
+	--shadow-soft: 0 12px 30px -12px rgb(31 35 51 / 0.18);
+	--shadow-pop: 0 14px 0 rgb(31 35 51 / 0.08);
+}
+
+html {
+	font-family: var(--font-sans);
+	-webkit-text-size-adjust: 100%;
+	-webkit-font-smoothing: antialiased;
+	text-rendering: optimizeLegibility;
+	color: var(--color-night-ink);
+	background: var(--color-egg-cream);
+}
+
+body {
+	min-height: 100dvh;
+	background:
+		radial-gradient(80% 60% at 50% -10%, var(--color-egg-cream-2) 0%, transparent 70%),
+		var(--color-egg-cream);
+	overflow-x: hidden;
+}
+
+button {
+	font-family: inherit;
+	font-weight: 700;
+}
+
+* {
+	-webkit-tap-highlight-color: transparent;
+}
+
+/* Headings get the playful display weight */
+h1,
+h2,
+h3 {
+	font-family: var(--font-display);
+	font-weight: 800;
+	letter-spacing: -0.02em;
+	color: var(--color-night-ink);
+}
+
+/* Reusable Duolingo-style "pop button": flat with a thick bottom shadow that compresses on press */
+.pop-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.5rem;
+	padding: 0.95rem 1.6rem;
+	border-radius: 1.25rem;
+	font-weight: 800;
+	font-size: 1.05rem;
+	letter-spacing: 0.01em;
+	box-shadow: 0 6px 0 rgb(0 0 0 / 0.12);
+	transition:
+		transform 0.08s ease,
+		box-shadow 0.08s ease,
+		background 0.15s ease;
+	user-select: none;
+	min-height: 48px;
+	cursor: pointer;
+	border: 0;
+	color: white;
+	background: var(--color-leaf-green);
+}
+.pop-btn:hover {
+	transform: translateY(-1px);
+	filter: brightness(1.03);
+}
+.pop-btn:active {
+	transform: translateY(4px);
+	box-shadow: 0 2px 0 rgb(0 0 0 / 0.12);
+}
+.pop-btn--yellow {
+	background: var(--color-duck-yellow-deep);
+	color: var(--color-night-ink);
+}
+.pop-btn--blue {
+	background: var(--color-pond-blue);
+}
+.pop-btn--coral {
+	background: var(--color-sunset-coral);
+}
+.pop-btn--ghost {
+	background: white;
+	color: var(--color-night-ink);
+	box-shadow:
+		0 6px 0 rgb(0 0 0 / 0.08),
+		inset 0 0 0 2px rgb(0 0 0 / 0.06);
+}
+
+.card {
+	background: white;
+	border-radius: 1.75rem;
+	box-shadow: var(--shadow-soft);
+	border: 1px solid rgb(0 0 0 / 0.04);
+}
+
+@keyframes ducky-bob {
+	0%,
+	100% {
+		transform: translateY(0);
+	}
+	50% {
+		transform: translateY(-8px);
+	}
+}
+.bob {
+	animation: ducky-bob 3.2s ease-in-out infinite;
+}
+
+@keyframes ducky-bob-fast {
+	0%,
+	100% {
+		transform: translateY(0) rotate(-1deg);
+	}
+	50% {
+		transform: translateY(-10px) rotate(2deg);
+	}
+}
+.bob-fast {
+	animation: ducky-bob-fast 1.3s ease-in-out infinite;
+}
+
+@keyframes pulse-soft {
+	0%,
+	100% {
+		opacity: 0.6;
+		transform: scale(1);
+	}
+	50% {
+		opacity: 1;
+		transform: scale(1.06);
+	}
+}
+.pulse-soft {
+	animation: pulse-soft 2.4s ease-in-out infinite;
+}
+
+/* Mobile-first scrollable carousel that snaps */
+.snap-row {
+	display: grid;
+	grid-auto-flow: column;
+	grid-auto-columns: 78%;
+	gap: 1rem;
+	overflow-x: auto;
+	scroll-snap-type: x mandatory;
+	padding: 0.25rem 1rem 1.5rem;
+	scrollbar-width: none;
+}
+.snap-row::-webkit-scrollbar {
+	display: none;
+}
+.snap-row > * {
+	scroll-snap-align: center;
+}
+@media (min-width: 1024px) {
+	.snap-row {
+		grid-auto-flow: column;
+		grid-auto-columns: 1fr;
+		grid-template-columns: repeat(4, 1fr);
+		overflow-x: visible;
+		padding: 0;
+	}
+}
