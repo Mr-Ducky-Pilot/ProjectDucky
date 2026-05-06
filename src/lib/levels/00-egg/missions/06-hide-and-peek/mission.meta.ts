@@ -11,8 +11,7 @@ const meta: MissionMeta = {
 	duckyIntro: 'Cover the chip with your hand. Watch the bar shrink.',
 	hardware: ['light', 'led-matrix'],
 	pairMode: false,
-	hexPath: '/hex/L0-06-hide-and-peek.hex',
-	hexVariant: 'static',
+	preset: 'hide-peek',
 	estMinutes: 2,
 	remixPrompts: [
 		'Take Ducky into the dark with you. Pillow fort?',

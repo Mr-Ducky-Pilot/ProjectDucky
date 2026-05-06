@@ -4,6 +4,7 @@
 	import SpeechBubble from '$lib/components/SpeechBubble.svelte';
 	import ConceptCard from '$lib/components/ConceptCard.svelte';
 	import FlashButton from '$lib/components/FlashButton.svelte';
+	import CodeCard from '$lib/components/CodeCard.svelte';
 	import { markVisited, markCompleted } from '$lib/stores/progress';
 	import { setMood } from '$lib/stores/ducky';
 	import type { Component } from 'svelte';
@@ -86,8 +87,8 @@
 				{/if}
 
 				<div class="flex flex-wrap items-center gap-3">
-					{#if mission.hexPath}
-						<FlashButton hexUrl={mission.hexPath} onFlashed={complete} />
+					{#if mission.level === 0 || mission.preset}
+						<FlashButton preset={mission.preset} onFlashed={complete} />
 					{/if}
 					<button type="button" onclick={complete} class="pop-btn pop-btn--ghost">
 						Mark done
@@ -109,8 +110,11 @@
 				{/if}
 			</div>
 
-			<aside class="lg:sticky lg:top-20 lg:self-start">
+			<aside class="flex flex-col gap-5 lg:sticky lg:top-20 lg:self-start">
 				<ConceptCard markdown={mission.conceptMarkdown} />
+				{#if mission.codeMarkdown}
+					<CodeCard markdown={mission.codeMarkdown} />
+				{/if}
 			</aside>
 		</div>
 	</div>

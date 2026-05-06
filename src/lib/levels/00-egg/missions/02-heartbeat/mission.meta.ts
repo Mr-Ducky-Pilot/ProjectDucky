@@ -11,8 +11,7 @@ const meta: MissionMeta = {
 	duckyIntro: 'Watch the heart pulse. Then hit Send and your duck will pulse too.',
 	hardware: ['led-matrix'],
 	pairMode: false,
-	hexPath: '/hex/L0-02-heartbeat.hex',
-	hexVariant: 'static',
+	preset: 'heartbeat',
 	estMinutes: 2,
 	remixPrompts: ['Try clapping along.', 'Can two ducks beat in sync?']
 };

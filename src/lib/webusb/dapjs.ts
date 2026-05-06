@@ -1,5 +1,5 @@
 import { DAPLink, WebUSB } from 'dapjs';
-import type { DeviceAdapter, FlashProgress } from './index';
+import type { DeviceAdapter, FlashProgress, FlashSource } from './index';
 import { decode, encode, type IncomingEvent } from './protocol';
 
 // micro:bit DAPLink USB IDs (same on v1 and v2)
@@ -111,15 +111,20 @@ export function createDapAdapter(): DeviceAdapter & { meta?: DapAdapterMeta } {
 			serialBuffer = '';
 		},
 
-		async flash(hexUrl: string, onProgress?: (p: FlashProgress) => void) {
+		async flash(source: FlashSource, onProgress?: (p: FlashProgress) => void) {
 			if (!target) throw new Error('Not connected — connect first.');
-			const res = await fetch(hexUrl);
-			if (!res.ok) {
-				throw new Error(
-					`Couldn't load firmware (${res.status}). Either the hex isn't built yet or the path is wrong.`
-				);
+			let buffer: ArrayBuffer;
+			if (typeof source === 'string') {
+				const res = await fetch(source);
+				if (!res.ok) {
+					throw new Error(
+						`Couldn't load firmware (${res.status}). Either the hex isn't built yet or the path is wrong.`
+					);
+				}
+				buffer = await res.arrayBuffer();
+			} else {
+				buffer = source;
 			}
-			const buffer = await res.arrayBuffer();
 
 			flashing = true;
 			// Stop serial during flash — DAPLink can't do both at once.

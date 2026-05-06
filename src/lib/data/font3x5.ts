@@ -52,9 +52,14 @@ export const FONT_3X5: Record<string, string[]> = {
 /**
  * Render a text string as a 5-row × N-column bitmap. Returns an object with
  * `rows` (5 strings of '0'/'1') and `width` (column count). Letters are
- * separated by a single empty column.
+ * separated by a single empty column. A configurable trailing-space pad of
+ * empty columns is appended so a looping ticker has a clean gap before the
+ * word starts again.
  */
-export function renderText(text: string): { rows: string[]; width: number } {
+export function renderText(
+	text: string,
+	{ trailingPad = 6 }: { trailingPad?: number } = {}
+): { rows: string[]; width: number } {
 	const upper = text.toUpperCase();
 	const rows = ['', '', '', '', ''];
 	for (let i = 0; i < upper.length; i++) {
@@ -65,5 +70,7 @@ export function renderText(text: string): { rows: string[]; width: number } {
 			if (i < upper.length - 1) rows[r] += '0'; // 1-col gap between letters
 		}
 	}
+	const pad = '0'.repeat(Math.max(0, trailingPad));
+	for (let r = 0; r < 5; r++) rows[r] += pad;
 	return { rows, width: rows[0].length };
 }

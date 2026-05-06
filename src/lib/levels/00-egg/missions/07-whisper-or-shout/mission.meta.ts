@@ -11,8 +11,7 @@ const meta: MissionMeta = {
 	duckyIntro: 'Whisper. Now shout. Now clap. The bars react in real time.',
 	hardware: ['mic', 'led-matrix'],
 	pairMode: false,
-	hexPath: '/hex/L0-07-whisper-shout.hex',
-	hexVariant: 'static',
+	preset: 'whisper',
 	estMinutes: 3,
 	remixPrompts: [
 		'How quiet can you be and still move the meter?',

@@ -11,8 +11,7 @@ const meta: MissionMeta = {
 	duckyIntro: 'Wrap your hands around the chip and try to warm it past 30°C.',
 	hardware: ['temp'],
 	pairMode: false,
-	hexPath: '/hex/L0-05-cold-hands.hex',
-	hexVariant: 'static',
+	preset: 'cold-hands',
 	estMinutes: 3,
 	remixPrompts: [
 		'Cup it for 30 seconds. Now stick it in the fridge for one minute. Compare.',

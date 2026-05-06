@@ -7,11 +7,13 @@ export type FlashProgress = {
 	pct: number; // 0..1
 };
 
+export type FlashSource = string | ArrayBuffer;
+
 export type DeviceAdapter = {
 	status: () => DeviceStatus;
 	connect: () => Promise<void>;
 	disconnect: () => Promise<void>;
-	flash: (hexUrl: string, onProgress?: (p: FlashProgress) => void) => Promise<void>;
+	flash: (source: FlashSource, onProgress?: (p: FlashProgress) => void) => Promise<void>;
 	send: (command: OutgoingCommand) => Promise<void>;
 	on: (cb: (event: IncomingEvent) => void) => () => void;
 };

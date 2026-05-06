@@ -11,8 +11,7 @@ const meta: MissionMeta = {
 	duckyIntro: 'Place the chip flat. Spin it slowly until it points north.',
 	hardware: ['compass'],
 	pairMode: false,
-	hexPath: '/hex/L0-09-compass.hex',
-	hexVariant: 'static',
+	preset: 'compass-quest',
 	estMinutes: 4,
 	remixPrompts: [
 		'Hold a magnet near the chip. Watch it lie!',

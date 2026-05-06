@@ -7,7 +7,8 @@ import {
 	type AdapterKind,
 	type DeviceAdapter,
 	type DeviceStatus,
-	type FlashProgress
+	type FlashProgress,
+	type FlashSource
 } from '$lib/webusb';
 import type { IncomingEvent, OutgoingCommand, Sensor } from '$lib/webusb/protocol';
 
@@ -125,11 +126,11 @@ export const connection = {
 		}));
 	},
 
-	async flash(hexUrl: string) {
+	async flash(source: FlashSource) {
 		const a = await ensureAdapter();
 		_store.update((s) => ({ ...s, status: 'flashing', flash: { phase: 'erasing', pct: 0 } }));
 		try {
-			await a.flash(hexUrl, (p) => _store.update((s) => ({ ...s, flash: p })));
+			await a.flash(source, (p) => _store.update((s) => ({ ...s, flash: p })));
 			_store.update((s) => ({ ...s, status: 'connected', flash: null }));
 		} catch (err) {
 			_store.update((s) => ({

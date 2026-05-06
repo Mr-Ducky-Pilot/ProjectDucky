@@ -11,8 +11,7 @@ const meta: MissionMeta = {
 	duckyIntro: 'Press A on the chip in your hand — and watch your friend’s screen wave back.',
 	hardware: ['radio', 'led-matrix', 'buttons'],
 	pairMode: true,
-	hexPath: '/hex/L0-10-wave-across.hex',
-	hexVariant: 'static',
+	preset: 'wave-across',
 	estMinutes: 5,
 	remixPrompts: [
 		'How far apart can the two chips get before the wave stops?',

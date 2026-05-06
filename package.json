@@ -24,6 +24,8 @@
 		"vite": "^8.0.7"
 	},
 	"dependencies": {
-		"dapjs": "^2.3.0"
+		"@microbit/microbit-fs": "^0.10.0",
+		"dapjs": "^2.3.0",
+		"nrf-intel-hex": "^1.4.0"
 	}
 }

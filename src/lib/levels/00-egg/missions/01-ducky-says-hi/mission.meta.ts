@@ -11,8 +11,6 @@ const meta: MissionMeta = {
 	duckyIntro: 'Tell me what to call you and I’ll wave it back at you.',
 	hardware: ['led-matrix', 'oled', 'speaker'],
 	pairMode: false,
-	hexPath: '/hex/L0-01-ducky-says-hi.hex',
-	hexVariant: 'parameterized',
 	estMinutes: 3,
 	remixPrompts: [
 		'What if Ducky greets two names, like a co-pilot?',

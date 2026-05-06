@@ -11,8 +11,7 @@ const meta: MissionMeta = {
 	duckyIntro: 'Press a button on the chip — or tap one of mine to preview.',
 	hardware: ['buttons', 'led-matrix'],
 	pairMode: false,
-	hexPath: '/hex/L0-03-tap-to-wake.hex',
-	hexVariant: 'static',
+	preset: 'tap-wake',
 	estMinutes: 2,
 	remixPrompts: ['Tap A and B together — what happens?', 'Try really fast tapping.']
 };

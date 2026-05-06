@@ -11,18 +11,17 @@
 
 	// Render the full word as a 5-row bitmap then animate a 5-column window
 	// across it, exactly like the micro:bit's scrollText does.
-	const rendered = $derived(renderText(name || 'A'));
-	const totalWidth = $derived(rendered.width + 5); // pad so it scrolls fully off
+	const rendered = $derived(renderText(name || 'A', { trailingPad: 6 }));
 
 	let offset = $state(0);
 
 	$effect(() => {
-		// Re-read totalWidth so the effect resets when the user types.
-		const w = totalWidth;
+		// Re-read width so the effect resets when the user types.
+		const w = rendered.width;
 		offset = 0;
 		const id = setInterval(() => {
 			offset = (offset + 1) % Math.max(1, w);
-		}, 200);
+		}, 280);
 		return () => clearInterval(id);
 	});
 

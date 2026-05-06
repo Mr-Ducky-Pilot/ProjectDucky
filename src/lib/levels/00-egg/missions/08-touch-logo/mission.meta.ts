@@ -11,8 +11,7 @@ const meta: MissionMeta = {
 	duckyIntro: 'Tap the gold logo on the chip — Ducky should chirp.',
 	hardware: ['logo-touch', 'speaker'],
 	pairMode: false,
-	hexPath: '/hex/L0-08-touch-logo.hex',
-	hexVariant: 'static',
+	preset: 'touch-logo',
 	estMinutes: 2,
 	remixPrompts: [
 		'Try it with sticky tape on the logo. Does it still work?',

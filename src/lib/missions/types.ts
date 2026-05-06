@@ -29,6 +29,7 @@ export type MissionMeta = {
 	duckyIntro: string;
 	hardware: Sensor[];
 	pairMode: boolean;
+	preset?: string;
 	hexPath?: string;
 	hexVariant?: HexVariant;
 	estMinutes: number;
@@ -37,5 +38,6 @@ export type MissionMeta = {
 
 export type Mission = MissionMeta & {
 	conceptMarkdown: string;
+	codeMarkdown?: string;
 	interactive?: () => Promise<{ default: Component }>;
 };

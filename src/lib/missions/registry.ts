@@ -17,6 +17,11 @@ const conceptModules = import.meta.glob<string>(
 	{ eager: true, query: '?raw', import: 'default' }
 );
 
+const codeModules = import.meta.glob<string>(
+	'/src/lib/levels/*/missions/*/code.md',
+	{ eager: true, query: '?raw', import: 'default' }
+);
+
 // Lazy: returns a loader so Interactive components are split into their own chunk.
 const interactiveModules = import.meta.glob<{ default: Component }>(
 	'/src/lib/levels/*/missions/*/Interactive.svelte'
@@ -30,10 +35,12 @@ const MISSIONS: Mission[] = Object.entries(metaModules)
 	.map(([metaPath, mod]) => {
 		const dir = dirOf(metaPath);
 		const conceptPath = `${dir}/concept.md`;
+		const codePath = `${dir}/code.md`;
 		const interactivePath = `${dir}/Interactive.svelte`;
 		return {
 			...mod.default,
 			conceptMarkdown: conceptModules[conceptPath] ?? '',
+			codeMarkdown: codeModules[codePath],
 			interactive: interactiveModules[interactivePath]
 		};
 	})

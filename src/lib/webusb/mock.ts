@@ -1,4 +1,4 @@
-import type { DeviceAdapter, DeviceStatus, FlashProgress } from './index';
+import type { DeviceAdapter, DeviceStatus, FlashProgress, FlashSource } from './index';
 import type { IncomingEvent, OutgoingCommand } from './protocol';
 
 /**
@@ -69,7 +69,7 @@ export function createMockAdapter(): DeviceAdapter {
 			_status = 'idle';
 		},
 
-		async flash(_hexUrl: string, onProgress?: (p: FlashProgress) => void) {
+		async flash(_source: FlashSource, onProgress?: (p: FlashProgress) => void) {
 			_status = 'flashing';
 			for (let i = 0; i <= 10; i++) {
 				await new Promise((r) => setTimeout(r, 220));

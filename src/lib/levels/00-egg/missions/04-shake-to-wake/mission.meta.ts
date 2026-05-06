@@ -11,8 +11,7 @@ const meta: MissionMeta = {
 	duckyIntro: 'Pick the chip up. Wiggle it. The graph is your motion in 3D!',
 	hardware: ['accel', 'speaker', 'led-matrix'],
 	pairMode: false,
-	hexPath: '/hex/L0-04-shake.hex',
-	hexVariant: 'static',
+	preset: 'shake',
 	estMinutes: 2,
 	remixPrompts: ['Try really gentle shakes vs really hard ones.', 'Can you balance Ducky perfectly still?']
 };
