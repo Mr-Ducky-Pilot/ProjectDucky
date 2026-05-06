@@ -10,10 +10,17 @@
 
 	onMount(() => {
 		let off: (() => void) | null = null;
-		connection.streamSensor('light', ([v]) => (lux = v)).then((u) => {
-			off = u;
-		});
-		return () => off?.();
+
+		async function subscribe() {
+			try {
+				off?.(); off = null;
+				off = await connection.streamSensor('light', ([v]) => (lux = v));
+			} catch { /* not connected yet */ }
+		}
+
+		subscribe();
+		const offReady = connection.onReady(() => void subscribe());
+		return () => { off?.(); offReady(); };
 	});
 
 	const mood = $derived(lux < threshold ? 'sleepy' : lux > 200 ? 'excited' : 'curious');
@@ -48,7 +55,6 @@
 		</div>
 	</div>
 
-	<!-- Threshold tuner -->
 	<div class="rounded-2xl border-2 border-(--color-mist) bg-white p-4">
 		<div class="mb-3 flex items-center justify-between">
 			<span class="text-xs font-extrabold tracking-wide text-(--color-night-soft) uppercase">
@@ -59,44 +65,24 @@
 			</span>
 		</div>
 
-		<!-- Live code preview -->
-		<div
-			class="mb-3 overflow-x-auto rounded-xl bg-slate-900 px-4 py-2 font-mono text-xs leading-relaxed"
-		>
+		<div class="mb-3 overflow-x-auto rounded-xl bg-slate-900 px-4 py-2 font-mono text-xs leading-relaxed">
 			<span class="text-purple-400">if</span>
 			<span class="text-slate-300"> light_level &gt; </span>
-			<span class="rounded bg-yellow-400/20 px-1 text-yellow-300 ring-1 ring-yellow-400/40"
-				>{threshold}</span
-			>
+			<span class="rounded bg-yellow-400/20 px-1 text-yellow-300 ring-1 ring-yellow-400/40">{threshold}</span>
 			<span class="text-slate-300">:</span><br />
 			<span class="text-slate-500">&nbsp;&nbsp;&nbsp;&nbsp;# 😊 show happy face</span><br />
 			<span class="text-purple-400">else</span><span class="text-slate-300">:</span><br />
 			<span class="text-slate-500">&nbsp;&nbsp;&nbsp;&nbsp;# 😢 show sad face</span>
 		</div>
 
-		<input
-			type="range"
-			min="10"
-			max="200"
-			step="5"
-			bind:value={threshold}
-			class="w-full accent-yellow-400"
-		/>
+		<input type="range" min="10" max="200" step="5" bind:value={threshold} class="w-full accent-yellow-400" />
 		<div class="mt-1 flex justify-between text-xs text-(--color-night-soft)">
 			<span>Easy to trigger (10)</span>
 			<span>Hard to trigger (200)</span>
 		</div>
 
-		<button
-			type="button"
-			onclick={applyThreshold}
-			class="pop-btn pop-btn--yellow mt-3 w-full text-sm"
-		>
-			{#if applied}
-				✅ Applied to Ducky!
-			{:else}
-				Apply to Ducky
-			{/if}
+		<button type="button" onclick={applyThreshold} class="pop-btn pop-btn--yellow mt-3 w-full text-sm">
+			{#if applied}✅ Applied to Ducky!{:else}Apply to Ducky{/if}
 		</button>
 		<p class="mt-2 text-center text-xs text-(--color-night-soft)">
 			Drag the slider, click Apply — the chip updates instantly!

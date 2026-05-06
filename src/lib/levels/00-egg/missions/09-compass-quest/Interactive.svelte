@@ -7,10 +7,17 @@
 
 	onMount(() => {
 		let off: (() => void) | null = null;
-		connection.streamSensor('compass', ([deg]) => (heading = deg)).then((u) => {
-			off = u;
-		});
-		return () => off?.();
+
+		async function subscribe() {
+			try {
+				off?.(); off = null;
+				off = await connection.streamSensor('compass', ([deg]) => (heading = deg));
+			} catch { /* not connected yet */ }
+		}
+
+		subscribe();
+		const offReady = connection.onReady(() => void subscribe());
+		return () => { off?.(); offReady(); };
 	});
 
 	const direction = $derived.by(() => {
@@ -28,5 +35,8 @@
 
 <div class="flex flex-col items-center gap-4">
 	<CompassDial {heading} />
-	<p class="font-display text-lg font-extrabold">Pointing: {direction}</p>
+	<p class="font-display text-xl font-extrabold">Pointing: {direction}</p>
+	<p class="max-w-xs text-center text-sm text-(--color-night-soft)">
+		Rotate the chip slowly on a flat surface. Keep it away from magnets!
+	</p>
 </div>

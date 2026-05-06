@@ -12,6 +12,7 @@ export function load({ params }: { params: { level: string; mission: string } })
 
 	const idx = ALL_MISSIONS.findIndex((m) => m.level === mission.level && m.id === mission.id);
 	const nextMission = idx >= 0 && idx < ALL_MISSIONS.length - 1 ? ALL_MISSIONS[idx + 1] : null;
+	const prevMission = idx > 0 ? ALL_MISSIONS[idx - 1] : null;
 
-	return { mission, nextMission };
+	return { mission, nextMission, prevMission };
 }

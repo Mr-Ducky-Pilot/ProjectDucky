@@ -54,7 +54,8 @@ state = {}
 buf = b""
 last_sample = 0
 last_logo = False
-light_thresh = 50  # adjustable via L:<value> command
+logo_count = 0       # consecutive touched polls — debounce
+light_thresh = 50    # adjustable via L:<value> command
 
 # --- Helpers ---
 def parse_matrix(bits):
@@ -265,20 +266,27 @@ while True:
     if button_b.was_pressed():
         print('<B B down>')
 
-    # 5. Logo touch (V2 only)
+    # 5. Logo touch (V2 only) — require 4 consecutive polls (~60ms) to debounce
     try:
         t = pin_logo.is_touched()
-        if t and not last_logo:
-            print('<T down>')
-            last_logo = True
-            if preset == 'touch-logo':
-                music.pitch(880, 120, wait=False)
-                display.show(FACES['happy'])
-                sleep(200)
-                display.show(FACES['duck'])
-        elif not t and last_logo:
-            print('<T up>')
-            last_logo = False
+        if t:
+            logo_count = min(logo_count + 1, 4)
+            if logo_count == 4 and not last_logo:
+                last_logo = True
+                print('<T down>')
+                if preset == 'touch-logo':
+                    # Descending quack: three quick tones
+                    music.pitch(1100, 70, wait=True)
+                    music.pitch(750, 90, wait=True)
+                    music.pitch(450, 120, wait=True)
+                    display.show(FACES['happy'])
+                    sleep(250)
+                    display.show(FACES['duck'])
+        else:
+            logo_count = 0
+            if last_logo:
+                print('<T up>')
+                last_logo = False
     except:
         pass
 

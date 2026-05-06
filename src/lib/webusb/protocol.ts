@@ -39,7 +39,8 @@ export type OutgoingCommand =
 	| { type: 'unsubscribe'; sensor: Sensor }
 	| { type: 'preset'; name: string }
 	| { type: 'light-threshold'; value: number }
-	| { type: 'radio-send'; payload: number };
+	| { type: 'radio-send'; payload: number }
+	| { type: 'quit' };
 
 export type IncomingEvent =
 	| { type: 'sensor'; sensor: Sensor; values: number[] }
@@ -68,6 +69,8 @@ export function encode(cmd: OutgoingCommand): string {
 			return 'L:' + cmd.value + '\n';
 		case 'radio-send':
 			return 'R:' + cmd.payload + '\n';
+		case 'quit':
+			return 'Q\n';
 	}
 }
 

@@ -9,27 +9,30 @@
 
 	onMount(() => {
 		let off: (() => void) | null = null;
-		connection
-			.streamSensor('accel', ([nx, ny, nz]) => {
-				x = nx;
-				y = ny;
-				z = nz;
-			})
-			.then((u) => {
-				off = u;
-			});
-		return () => off?.();
+
+		async function subscribe() {
+			try {
+				off?.(); off = null;
+				off = await connection.streamSensor('accel', ([nx, ny, nz]) => {
+					x = nx; y = ny; z = nz;
+				});
+			} catch { /* not connected yet */ }
+		}
+
+		subscribe();
+		const offReady = connection.onReady(() => void subscribe());
+		return () => { off?.(); offReady(); };
 	});
 
 	const magnitude = $derived(Math.sqrt(x * x + y * y + z * z));
 </script>
 
 <div class="grid w-full gap-3 sm:grid-cols-2">
-	<SensorMeter label="left/right" value={x} min={-2} max={2} unit="g" color="#4cc1ff" />
-	<SensorMeter label="forward/back" value={y} min={-2} max={2} unit="g" color="#7ad44b" />
-	<SensorMeter label="up/down" value={z} min={-2} max={2} unit="g" color="#ff7a6b" />
-	<SensorMeter label="overall motion" value={magnitude} min={0} max={3} unit="g" color="#ffd23a" />
+	<SensorMeter label="Left / Right" value={x} min={-2} max={2} unit="g" color="#4cc1ff" />
+	<SensorMeter label="Forward / Back" value={y} min={-2} max={2} unit="g" color="#7ad44b" />
+	<SensorMeter label="Up / Down" value={z} min={-2} max={2} unit="g" color="#ff7a6b" />
+	<SensorMeter label="Overall Motion" value={magnitude} min={0} max={3} unit="g" color="#ffd23a" />
 </div>
 <p class="mt-3 text-center text-sm text-(--color-night-soft)">
-	Your duck is sitting on the desk → up/down ≈ 1.0. Pick it up and shake!
+	Sitting still on a desk → Up/Down ≈ 1.0g (gravity!). Pick it up and shake hard.
 </p>

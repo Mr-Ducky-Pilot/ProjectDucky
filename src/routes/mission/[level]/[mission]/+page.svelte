@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { goto } from '$app/navigation';
+	import { onMount } from 'svelte';
 	import Ducky from '$lib/components/Ducky.svelte';
 	import SpeechBubble from '$lib/components/SpeechBubble.svelte';
 	import ConceptCard from '$lib/components/ConceptCard.svelte';
@@ -6,11 +8,13 @@
 	import CodeCard from '$lib/components/CodeCard.svelte';
 	import { markVisited, markCompleted } from '$lib/stores/progress';
 	import { setMood } from '$lib/stores/ducky';
+	import { connection } from '$lib/stores/connection';
 	import type { Component } from 'svelte';
 
 	let { data } = $props();
 	const mission = $derived(data.mission);
 	const nextMission = $derived(data.nextMission);
+	const prevMission = $derived(data.prevMission);
 
 	let Interactive = $state<Component | null>(null);
 
@@ -22,6 +26,26 @@
 		} else {
 			Interactive = null;
 		}
+		// Stop the active preset when navigating to a new mission
+		return () => {
+			void connection.send({ type: 'quit' }).catch(() => {});
+		};
+	});
+
+	// Board button B = next mission, A = previous mission
+	onMount(() => {
+		const off = connection.onEvent((e) => {
+			if (e.type !== 'button' || e.phase !== 'down') return;
+			if (e.button === 'B' && data.nextMission) {
+				const m = data.nextMission;
+				void goto(`/mission/${m.level}/${m.id}`);
+			}
+			if (e.button === 'A' && data.prevMission) {
+				const m = data.prevMission;
+				void goto(`/mission/${m.level}/${m.id}`);
+			}
+		});
+		return off;
 	});
 
 	function complete() {
@@ -31,12 +55,32 @@
 
 <section class="px-5 py-6 sm:py-10">
 	<div class="mx-auto max-w-5xl">
-		<a
-			href="/level/{mission.level}"
-			class="text-sm font-bold text-(--color-pond-deep) no-underline hover:underline"
-		>
-			← Back to Level {mission.level}
-		</a>
+		<div class="flex items-center gap-4">
+			<a
+				href="/level/{mission.level}"
+				class="text-sm font-bold text-(--color-pond-deep) no-underline hover:underline"
+			>
+				← Level {mission.level}
+			</a>
+			{#if prevMission}
+				<a
+					href="/mission/{prevMission.level}/{prevMission.id}"
+					class="text-sm text-(--color-night-soft) no-underline hover:text-(--color-pond-deep)"
+					title={prevMission.title}
+				>
+					‹ {prevMission.emoji}
+				</a>
+			{/if}
+			{#if nextMission}
+				<a
+					href="/mission/{nextMission.level}/{nextMission.id}"
+					class="text-sm text-(--color-night-soft) no-underline hover:text-(--color-pond-deep)"
+					title={nextMission.title}
+				>
+					{nextMission.emoji} ›
+				</a>
+			{/if}
+		</div>
 
 		<header class="mt-3 flex flex-col gap-4 sm:flex-row sm:items-start sm:gap-6">
 			<div
@@ -79,13 +123,14 @@
 						<Interactive {complete} {mission} />
 					{/key}
 				{:else}
-					<div class="rounded-2xl bg-(--color-mist) p-5 text-center text-sm text-(--color-night-soft)">
+					<div
+						class="rounded-2xl bg-(--color-mist) p-5 text-center text-sm text-(--color-night-soft)"
+					>
 						No interactive companion for this mission — just play with the kit and tap below when
 						you're done.
 					</div>
 				{/if}
 
-				<!-- Only show FlashButton for missions with a specific preset (not mission 01 which handles it inline) -->
 				<div class="flex flex-wrap items-center gap-3">
 					{#if mission.preset}
 						<FlashButton preset={mission.preset} onFlashed={complete} />
@@ -127,7 +172,6 @@
 			</aside>
 		</div>
 
-		<!-- Code explainer — full width below -->
 		{#if mission.codeMarkdown}
 			<div class="mt-6">
 				<div class="mb-3 flex items-center gap-2">

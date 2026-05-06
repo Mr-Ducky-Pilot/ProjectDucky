@@ -148,6 +148,17 @@ export const connection = {
 	},
 
 	/**
+	 * Subscribe to every firmware-ready event (fires each time the board boots,
+	 * including after a flash). Returns an unsubscribe function.
+	 * Use this in sensor Interactives to re-subscribe after a flash.
+	 */
+	onReady(cb: () => void): () => void {
+		return onEvent((e) => {
+			if (e.type === 'log' && /ducky os ready/i.test(e.text)) cb();
+		});
+	},
+
+	/**
 	 * Resolves when the firmware announces itself via `<L Ducky OS ready>`,
 	 * or after `timeoutMs` (default 5 s) if that message never arrives.
 	 * Call this after `flash()` so preset commands are sent to a live board.
