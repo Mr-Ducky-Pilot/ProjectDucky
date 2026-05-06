@@ -147,6 +147,24 @@ export const connection = {
 		await a.send(command);
 	},
 
+	/**
+	 * Resolves when the firmware announces itself via `<L Ducky OS ready>`,
+	 * or after `timeoutMs` (default 5 s) if that message never arrives.
+	 * Call this after `flash()` so preset commands are sent to a live board.
+	 */
+	waitForReady(timeoutMs = 5000): Promise<void> {
+		return new Promise((resolve) => {
+			const timer = setTimeout(resolve, timeoutMs);
+			const off = onEvent((e) => {
+				if (e.type === 'log' && /ducky os ready/i.test(e.text)) {
+					clearTimeout(timer);
+					off();
+					resolve();
+				}
+			});
+		});
+	},
+
 	async streamSensor(sensor: Sensor, cb: (values: number[]) => void): Promise<() => void> {
 		const a = await ensureAdapter();
 		const off = onEvent((e) => {

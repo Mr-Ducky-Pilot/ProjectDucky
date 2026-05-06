@@ -4,7 +4,8 @@
 	import { connection } from '$lib/stores/connection';
 	import { onMount } from 'svelte';
 
-	const WAVE = '0010001110011100010000100'.split('').map((c) => c === '1');
+	// FACES['wave'] = "00100:01110:11111:01110:00100"
+	const WAVE = '0010001110111110111000100'.split('').map((c) => c === '1');
 	const EMPTY = Array(25).fill(false);
 
 	let theirBits = $state<boolean[]>(EMPTY);

@@ -79,6 +79,8 @@ export function createMockAdapter(): DeviceAdapter {
 				});
 			}
 			_status = 'connected';
+			// Simulate the board booting and emitting its ready signal
+			setTimeout(() => emit({ type: 'log', text: 'Ducky OS ready' }), 400);
 		},
 
 		async send(command: OutgoingCommand) {

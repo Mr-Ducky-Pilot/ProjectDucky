@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
 	import Ducky from '$lib/components/Ducky.svelte';
 	import SpeechBubble from '$lib/components/SpeechBubble.svelte';
 	import ConceptCard from '$lib/components/ConceptCard.svelte';
@@ -11,6 +10,7 @@
 
 	let { data } = $props();
 	const mission = $derived(data.mission);
+	const nextMission = $derived(data.nextMission);
 
 	let Interactive = $state<Component | null>(null);
 
@@ -35,7 +35,7 @@
 			href="/level/{mission.level}"
 			class="text-sm font-bold text-(--color-pond-deep) no-underline hover:underline"
 		>
-			← Back to level {mission.level}
+			← Back to Level {mission.level}
 		</a>
 
 		<header class="mt-3 flex flex-col gap-4 sm:flex-row sm:items-start sm:gap-6">
@@ -53,9 +53,7 @@
 						~{mission.estMinutes} min
 					</span>
 					{#if mission.pairMode}
-						<span
-							class="rounded-full bg-(--color-pond-blue)/15 px-2 py-1 text-(--color-pond-deep)"
-						>
+						<span class="rounded-full bg-(--color-pond-blue)/15 px-2 py-1 text-(--color-pond-deep)">
 							Two ducks
 						</span>
 					{/if}
@@ -68,7 +66,8 @@
 			</div>
 		</header>
 
-		<div class="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
+		<!-- Main content + concept sidebar -->
+		<div class="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_300px]">
 			<div class="card flex min-w-0 flex-col gap-5 overflow-hidden rounded-3xl p-5 sm:p-7">
 				<div class="flex items-start gap-3">
 					<Ducky mood="excited" size={64} />
@@ -81,23 +80,36 @@
 					{/key}
 				{:else}
 					<div class="rounded-2xl bg-(--color-mist) p-5 text-center text-sm text-(--color-night-soft)">
-						No interactive companion for this mission — just play with the kit
-						and tap below when you’re done.
+						No interactive companion for this mission — just play with the kit and tap below when
+						you're done.
 					</div>
 				{/if}
 
+				<!-- Only show FlashButton for missions with a specific preset (not mission 01 which handles it inline) -->
 				<div class="flex flex-wrap items-center gap-3">
-					{#if mission.level === 0 || mission.preset}
+					{#if mission.preset}
 						<FlashButton preset={mission.preset} onFlashed={complete} />
 					{/if}
-					<button type="button" onclick={complete} class="pop-btn pop-btn--ghost">
-						Mark done
-					</button>
+					{#if nextMission}
+						<a
+							href="/mission/{nextMission.level}/{nextMission.id}"
+							onclick={complete}
+							class="pop-btn pop-btn--ghost no-underline"
+						>
+							Next: {nextMission.title} →
+						</a>
+					{:else}
+						<button type="button" onclick={complete} class="pop-btn pop-btn--ghost">
+							Done ✓
+						</button>
+					{/if}
 				</div>
 
 				{#if mission.remixPrompts && mission.remixPrompts.length > 0}
 					<div class="rounded-2xl bg-(--color-pond-blue)/10 p-4">
-						<div class="mb-1 text-xs font-extrabold tracking-widest text-(--color-pond-deep) uppercase">
+						<div
+							class="mb-1 text-xs font-extrabold tracking-widest text-(--color-pond-deep) uppercase"
+						>
 							Remix it
 						</div>
 						<ul class="space-y-1 text-sm text-(--color-night-soft)">
@@ -110,12 +122,20 @@
 				{/if}
 			</div>
 
-			<aside class="flex flex-col gap-5 lg:sticky lg:top-20 lg:self-start">
+			<aside class="lg:sticky lg:top-20 lg:self-start">
 				<ConceptCard markdown={mission.conceptMarkdown} />
-				{#if mission.codeMarkdown}
-					<CodeCard markdown={mission.codeMarkdown} />
-				{/if}
 			</aside>
 		</div>
+
+		<!-- Code explainer — full width below -->
+		{#if mission.codeMarkdown}
+			<div class="mt-6">
+				<div class="mb-3 flex items-center gap-2">
+					<span class="text-lg">🔍</span>
+					<h2 class="font-display text-xl font-extrabold">How it works</h2>
+				</div>
+				<CodeCard markdown={mission.codeMarkdown} />
+			</div>
+		{/if}
 	</div>
 </section>

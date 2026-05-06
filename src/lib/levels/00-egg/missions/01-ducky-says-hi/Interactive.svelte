@@ -1,65 +1,157 @@
 <script lang="ts">
 	import LedMatrix from '$lib/components/LedMatrix.svelte';
 	import { connection } from '$lib/stores/connection';
+	import { buildDuckyHex } from '$lib/firmware/build';
 	import { progress, setPlayerName } from '$lib/stores/progress';
-	import { renderText } from '$lib/data/font3x5';
+	import { FONT_3X5 } from '$lib/data/font3x5';
+	import { setMood, say } from '$lib/stores/ducky';
 
 	type Props = { complete: () => void };
 	let { complete }: Props = $props();
 
 	let name = $state($progress.playerName || 'Ada');
+	let charIdx = $state(0);
+	let sending = $state(false);
+	let sent = $state(false);
+	let errorMsg = $state<string | null>(null);
 
-	// Render the full word as a 5-row bitmap then animate a 5-column window
-	// across it, exactly like the micro:bit's scrollText does.
-	const rendered = $derived(renderText(name || 'A', { trailingPad: 6 }));
-
-	let offset = $state(0);
+	// Character carousel: cycle through each letter of the name
+	const letters = $derived(
+		name
+			.trim()
+			.toUpperCase()
+			.split('')
+			.filter((c) => c in FONT_3X5 || c === ' ')
+	);
 
 	$effect(() => {
-		// Re-read width so the effect resets when the user types.
-		const w = rendered.width;
-		offset = 0;
+		const len = letters.length;
+		charIdx = 0;
+		if (len === 0) return;
 		const id = setInterval(() => {
-			offset = (offset + 1) % Math.max(1, w);
-		}, 280);
+			charIdx = (charIdx + 1) % len;
+		}, 550);
 		return () => clearInterval(id);
 	});
 
-	const previewBits = $derived.by(() => {
+	// Build 5×5 bits: center the 3-wide glyph with 1px padding left/right
+	const currentBits = $derived.by(() => {
+		const chars = letters;
+		if (chars.length === 0) return Array(25).fill(false);
+		const ch = chars[charIdx] ?? ' ';
+		const glyph = FONT_3X5[ch] ?? FONT_3X5['?'];
 		const arr: boolean[] = Array(25).fill(false);
 		for (let r = 0; r < 5; r++) {
-			for (let c = 0; c < 5; c++) {
-				const srcCol = (offset + c) % rendered.width;
-				const ch = rendered.rows[r][srcCol];
-				arr[r * 5 + c] = ch === '1';
+			const row = glyph[r] ?? '000';
+			for (let c = 0; c < 3; c++) {
+				arr[r * 5 + (c + 1)] = row[c] === '1';
 			}
 		}
 		return arr;
 	});
 
-	async function send() {
-		setPlayerName(name);
-		await connection.send({ type: 'scroll', text: name });
-		complete();
+	// Show letter label below the matrix
+	const currentLetter = $derived(letters[charIdx] ?? '');
+
+	async function sendToDevice() {
+		if (sending) return;
+		errorMsg = null;
+		sending = true;
+
+		try {
+			const state = connection.getState();
+			if (state.status === 'idle') {
+				await connection.connect();
+			}
+			if (connection.getState().status !== 'connected') {
+				sending = false;
+				return;
+			}
+
+			// Flash firmware if not already done this session
+			const hex = await buildDuckyHex();
+			await connection.flash(hex);
+
+			if (connection.getState().status === 'error') {
+				errorMsg = connection.getState().error;
+				setMood('sad');
+				sending = false;
+				return;
+			}
+
+			// Wait for MicroPython to boot and announce itself
+			await connection.waitForReady();
+
+			setPlayerName(name);
+			await connection.send({ type: 'scroll', text: name.toUpperCase() });
+
+			sent = true;
+			setMood('celebrating');
+			say(`Hi ${name}! 👋`, 'celebrating');
+			complete();
+		} catch (err) {
+			errorMsg = err instanceof Error ? err.message : String(err);
+			setMood('sad');
+		} finally {
+			sending = false;
+		}
 	}
 </script>
 
-<div class="flex flex-col items-center gap-5">
-	<LedMatrix bits={previewBits} size={200} />
+<div class="flex flex-col items-center gap-6">
+	<!-- LED preview -->
+	<div class="flex flex-col items-center gap-3">
+		<p class="text-xs font-extrabold tracking-widest text-(--color-night-soft) uppercase">
+			Live Preview
+		</p>
+		<div class="relative">
+			<LedMatrix bits={currentBits} size={200} />
+			{#if currentLetter && currentLetter !== ' '}
+				<div
+					class="absolute -bottom-8 left-1/2 -translate-x-1/2 rounded-full bg-(--color-night-ink) px-3 py-0.5 font-mono text-sm font-bold text-white"
+				>
+					{currentLetter}
+				</div>
+			{/if}
+		</div>
+	</div>
 
-	<label class="flex w-full max-w-md flex-col gap-2 text-center">
+	<!-- Name input -->
+	<label class="flex w-full max-w-sm flex-col gap-2 text-center" style="margin-top: 1.5rem;">
 		<span class="text-xs font-extrabold tracking-wide text-(--color-night-soft) uppercase">
 			Your name
 		</span>
 		<input
 			type="text"
 			bind:value={name}
-			maxlength="14"
-			class="rounded-2xl border-2 border-(--color-mist) bg-white px-4 py-3 text-center font-display text-xl font-extrabold focus:border-(--color-pond-blue) focus:outline-none"
+			maxlength="12"
+			placeholder="e.g. ADA"
+			class="rounded-2xl border-2 border-(--color-mist) bg-white px-4 py-3 text-center font-display text-2xl font-extrabold tracking-widest uppercase focus:border-(--color-pond-blue) focus:outline-none"
 		/>
+		<span class="text-xs text-(--color-night-soft)">
+			Each letter shows on the micro:bit one at a time
+		</span>
 	</label>
 
-	<button type="button" onclick={send} class="pop-btn pop-btn--yellow">
-		Send my name to Ducky →
+	<!-- Send button -->
+	<button
+		type="button"
+		onclick={sendToDevice}
+		disabled={sending || !name.trim()}
+		class="pop-btn pop-btn--yellow w-full max-w-sm"
+	>
+		{#if sending}
+			Sending to Ducky…
+		{:else if sent}
+			✅ Sent! Watch Ducky scroll it
+		{:else}
+			Send my name to Ducky →
+		{/if}
 	</button>
+
+	{#if errorMsg}
+		<p class="max-w-sm rounded-xl bg-(--color-sunset-coral)/15 px-3 py-2 text-center text-xs text-(--color-sunset-deep)">
+			{errorMsg}
+		</p>
+	{/if}
 </div>

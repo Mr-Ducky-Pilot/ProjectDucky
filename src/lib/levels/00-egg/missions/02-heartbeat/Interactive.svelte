@@ -1,7 +1,9 @@
 <script lang="ts">
 	import LedMatrix from '$lib/components/LedMatrix.svelte';
 
-	const BIG = '0110011111111110111000100'.split('').map((c) => c === '1');
+	// BIG_HEART   = "01010:11111:11111:01110:00100"
+	// SMALL_HEART = "00000:01110:01110:00100:00000"
+	const BIG = '0101011111111110111000100'.split('').map((c) => c === '1');
 	const SMALL = '0000001110011100010000000'.split('').map((c) => c === '1');
 
 	let big = $state(true);

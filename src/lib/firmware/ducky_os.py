@@ -54,6 +54,7 @@ state = {}
 buf = b""
 last_sample = 0
 last_logo = False
+light_thresh = 50  # adjustable via L:<value> command
 
 # --- Helpers ---
 def parse_matrix(bits):
@@ -98,12 +99,18 @@ def bargraph(value, max_value):
 
 # --- Command handler ---
 def handle(line):
-    global preset, state
+    global preset, state, light_thresh
     if not line:
         return
     c = line[0]
     rest = line[2:] if len(line) > 2 else ""
-    if c == 'M':
+    if c == 'L':
+        try:
+            light_thresh = max(0, min(255, int(rest)))
+            print('<L threshold=%d>' % light_thresh)
+        except:
+            pass
+    elif c == 'M':
         try:
             display.show(parse_matrix(rest))
         except:
@@ -177,7 +184,7 @@ def tick():
         if n - state.get('t', 0) > 200:
             state['t'] = n
             l = display.read_light_level()
-            display.show(FACES['happy'] if l > 50 else FACES['sad'])
+            display.show(FACES['happy'] if l > light_thresh else FACES['sad'])
 
     elif preset == 'whisper':
         if n - state.get('t', 0) > 80:

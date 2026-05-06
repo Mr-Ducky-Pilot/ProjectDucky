@@ -20,6 +20,7 @@
 	const conn = connection;
 	let justFlashed = $state(false);
 	let building = $state(false);
+	let booting = $state(false);
 	let localError = $state<string | null>(null);
 
 	async function flash() {
@@ -51,10 +52,15 @@
 		}
 
 		if (preset) {
+			// Board resets after flash — wait for MicroPython to boot before
+			// sending serial commands, otherwise they're lost.
+			booting = true;
+			await connection.waitForReady();
+			booting = false;
 			try {
 				await connection.send({ type: 'preset', name: preset });
 			} catch {
-				// non-fatal — board might need a moment after flash
+				// non-fatal
 			}
 		}
 
@@ -66,7 +72,7 @@
 	}
 
 	const busy = $derived(
-		building || $conn.status === 'flashing' || $conn.status === 'requesting'
+		building || booting || $conn.status === 'flashing' || $conn.status === 'requesting'
 	);
 </script>
 
@@ -83,6 +89,8 @@
 			Connecting…
 		{:else if $conn.status === 'flashing'}
 			Flashing… {Math.round(($conn.flash?.pct ?? 0) * 100)}%
+		{:else if booting}
+			Booting Ducky…
 		{:else if justFlashed}
 			✅ {flashedLabel}
 		{:else}
