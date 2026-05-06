@@ -8,25 +8,43 @@
 		if (s === 'connected' || s === 'flashing') return connection.disconnect();
 		return connection.connect();
 	}
+
+	const dotColor = $derived(
+		$conn.status === 'connected'
+			? 'bg-(--color-leaf-green)'
+			: $conn.status === 'flashing' || $conn.status === 'requesting'
+				? 'bg-(--color-duck-yellow-deep)'
+				: $conn.status === 'error'
+					? 'bg-(--color-sunset-coral)'
+					: 'bg-(--color-mist)'
+	);
+
+	const kindBadgeClass = $derived(
+		$conn.kind === 'real'
+			? 'bg-(--color-leaf-green)/20 text-(--color-leaf-deep)'
+			: 'bg-(--color-mist) text-(--color-night-soft)'
+	);
 </script>
 
 <div class="flex items-center gap-3 rounded-2xl bg-white px-3 py-2 shadow-[var(--shadow-soft)]">
-	<span
-		class="size-3 rounded-full"
-		class:bg-(--color-leaf-green)={$conn.status === 'connected'}
-		class:bg-(--color-duck-yellow-deep)={$conn.status === 'flashing' ||
-			$conn.status === 'requesting'}
-		class:bg-(--color-sunset-coral)={$conn.status === 'error'}
-		class:bg-(--color-mist)={$conn.status === 'idle'}
-	></span>
+	<span class="size-3 rounded-full {dotColor}"></span>
 	<div class="flex flex-col leading-tight">
-		<span class="text-xs font-extrabold tracking-wide text-(--color-night-soft) uppercase">
+		<span
+			class="flex items-center gap-1 text-[10px] font-extrabold tracking-wide text-(--color-night-soft) uppercase"
+		>
 			Ducky
+			{#if $conn.status === 'connected'}
+				<span class="rounded-full px-1.5 py-px text-[9px] {kindBadgeClass}">
+					{$conn.kind === 'real' ? 'Real' : 'Pretend'}
+				</span>
+			{/if}
 		</span>
 		<span class="text-sm font-bold">
 			{#if $conn.status === 'idle'}Not connected{/if}
 			{#if $conn.status === 'requesting'}Connecting…{/if}
-			{#if $conn.status === 'connected'}Ready{/if}
+			{#if $conn.status === 'connected'}
+				{$conn.deviceLabel ?? 'Ready'}
+			{/if}
 			{#if $conn.status === 'flashing'}
 				Flashing {Math.round(($conn.flash?.pct ?? 0) * 100)}%
 			{/if}

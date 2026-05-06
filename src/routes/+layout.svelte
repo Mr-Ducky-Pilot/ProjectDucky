@@ -1,10 +1,38 @@
 <script lang="ts">
 	import '../app.css';
 	import { page } from '$app/state';
+	import { connection } from '$lib/stores/connection';
 
 	let { children } = $props();
 
+	const conn = connection;
 	const isLanding = $derived(page.url.pathname === '/');
+	const isConnect = $derived(page.url.pathname.startsWith('/connect'));
+
+	const dotColor = $derived(
+		$conn.status === 'connected'
+			? 'bg-(--color-leaf-green)'
+			: $conn.status === 'flashing' || $conn.status === 'requesting'
+				? 'bg-(--color-duck-yellow-deep)'
+				: $conn.status === 'error'
+					? 'bg-(--color-sunset-coral)'
+					: 'bg-(--color-mist)'
+	);
+
+	const statusLabel = $derived.by(() => {
+		switch ($conn.status) {
+			case 'connected':
+				return $conn.kind === 'real' ? 'Real Ducky' : 'Pretend Ducky';
+			case 'flashing':
+				return `Flashing ${Math.round(($conn.flash?.pct ?? 0) * 100)}%`;
+			case 'requesting':
+				return 'Connecting…';
+			case 'error':
+				return 'Hiccup';
+			default:
+				return 'Not connected';
+		}
+	});
 </script>
 
 <svelte:head>
@@ -27,12 +55,23 @@
 			>
 				Journey
 			</a>
-			<a
-				href="/connect"
-				class="rounded-full bg-(--color-pond-blue) px-4 py-2 text-white shadow-[0_4px_0_rgb(0_0_0/0.12)] hover:brightness-105"
-			>
-				Connect
-			</a>
+			{#if !isConnect}
+				<a
+					href="/connect"
+					class="flex items-center gap-2 rounded-full bg-white px-3 py-2 shadow-[var(--shadow-soft)] hover:bg-(--color-egg-cream-2)"
+					title={statusLabel}
+				>
+					<span class="size-2.5 rounded-full {dotColor}"></span>
+					<span class="hidden sm:inline">{statusLabel}</span>
+					<span class="sm:hidden">Ducky</span>
+				</a>
+			{:else}
+				<span
+					class="flex items-center gap-2 rounded-full bg-(--color-pond-blue) px-4 py-2 text-white"
+				>
+					Connect
+				</span>
+			{/if}
 		</nav>
 	</header>
 {/if}

@@ -16,13 +16,44 @@ export type DeviceAdapter = {
 	on: (cb: (event: IncomingEvent) => void) => () => void;
 };
 
-export async function createAdapter(): Promise<DeviceAdapter> {
-	// Vite env switch — flip to false once a real ducky firmware is on the desk.
-	const useMock = import.meta.env.VITE_USE_MOCK_USB !== 'false';
+export type AdapterKind = 'real' | 'mock';
+
+export type AdapterInstance = {
+	kind: AdapterKind;
+	adapter: DeviceAdapter;
+	deviceLabel?: string;
+	deviceSerial?: string;
+};
+
+export function isWebUsbSupported(): boolean {
+	return typeof navigator !== 'undefined' && 'usb' in navigator;
+}
+
+/**
+ * Decide which adapter to use. Order:
+ *   1. Forced via `VITE_USE_MOCK_USB=true`
+ *   2. WebUSB unavailable in the browser → mock with a warning
+ *   3. Default: real DAPjs adapter
+ */
+export async function createAdapter(forceMock = false): Promise<AdapterInstance> {
+	const envWantsMock = import.meta.env.VITE_USE_MOCK_USB === 'true';
+	const useMock = forceMock || envWantsMock || !isWebUsbSupported();
+
 	if (useMock) {
 		const { createMockAdapter } = await import('./mock');
-		return createMockAdapter();
+		return { kind: 'mock', adapter: createMockAdapter() };
 	}
+
 	const { createDapAdapter } = await import('./dapjs');
-	return createDapAdapter();
+	const adapter = createDapAdapter();
+	return {
+		kind: 'real',
+		adapter,
+		get deviceLabel() {
+			return adapter.meta?.productName;
+		},
+		get deviceSerial() {
+			return adapter.meta?.serialNumber;
+		}
+	};
 }

@@ -2,6 +2,9 @@ import { writable, derived, get } from 'svelte/store';
 import { browser } from '$app/environment';
 import {
 	createAdapter,
+	isWebUsbSupported,
+	type AdapterInstance,
+	type AdapterKind,
 	type DeviceAdapter,
 	type DeviceStatus,
 	type FlashProgress
@@ -12,37 +15,62 @@ type ConnState = {
 	status: DeviceStatus;
 	flash: FlashProgress | null;
 	error: string | null;
-	mock: boolean;
+	kind: AdapterKind;
+	deviceLabel: string | null;
+	deviceSerial: string | null;
+	webusbSupported: boolean;
+	preferMock: boolean;
 };
 
 const initial: ConnState = {
 	status: 'idle',
 	flash: null,
 	error: null,
-	mock: true
+	kind: 'real',
+	deviceLabel: null,
+	deviceSerial: null,
+	webusbSupported: false,
+	preferMock: false
 };
 
 const _store = writable<ConnState>(initial);
-let adapter: DeviceAdapter | null = null;
+let instance: AdapterInstance | null = null;
 const eventListeners = new Set<(e: IncomingEvent) => void>();
 
+const offEventInternal = (cb: (e: IncomingEvent) => void) => {
+	eventListeners.delete(cb);
+};
+
 async function ensureAdapter(): Promise<DeviceAdapter> {
-	if (!adapter) {
-		adapter = await createAdapter();
-		adapter.on((e) => eventListeners.forEach((l) => l(e)));
+	if (instance) return instance.adapter;
+	const preferMock = get(_store).preferMock;
+	instance = await createAdapter(preferMock);
+	instance.adapter.on((e) => eventListeners.forEach((l) => l(e)));
+	_store.update((s) => ({
+		...s,
+		kind: instance!.kind,
+		deviceLabel: instance!.deviceLabel ?? null,
+		deviceSerial: instance!.deviceSerial ?? null
+	}));
+	return instance.adapter;
+}
+
+async function teardownAdapter() {
+	if (!instance) return;
+	try {
+		await instance.adapter.disconnect();
+	} catch {
+		/* noop */
 	}
-	return adapter;
+	instance = null;
 }
 
 function onEvent(cb: (e: IncomingEvent) => void): () => void {
 	eventListeners.add(cb);
-	return () => {
-		eventListeners.delete(cb);
-	};
+	return () => offEventInternal(cb);
 }
 
 export const connection = {
-	// Re-expose the writable store interface so `$connection` works in templates.
 	subscribe: _store.subscribe,
 	status: derived(_store, (s) => s.status),
 
@@ -51,20 +79,50 @@ export const connection = {
 		try {
 			const a = await ensureAdapter();
 			await a.connect();
-			_store.update((s) => ({ ...s, status: a.status() }));
-		} catch (err) {
 			_store.update((s) => ({
 				...s,
-				status: 'error',
-				error: err instanceof Error ? err.message : String(err)
+				status: a.status(),
+				deviceLabel: instance?.deviceLabel ?? s.deviceLabel,
+				deviceSerial: instance?.deviceSerial ?? s.deviceSerial
+			}));
+		} catch (err) {
+			const msg = err instanceof Error ? err.message : String(err);
+			// User cancelling the WebUSB picker is normal — surface it but
+			// don't park in the "error" state forever.
+			const cancelled = /cancelled|no device selected/i.test(msg);
+			_store.update((s) => ({
+				...s,
+				status: cancelled ? 'idle' : 'error',
+				error: cancelled ? null : msg
 			}));
 		}
 	},
 
 	async disconnect() {
-		if (!adapter) return;
-		await adapter.disconnect();
-		_store.update((s) => ({ ...s, status: 'idle' }));
+		await teardownAdapter();
+		_store.update((s) => ({
+			...s,
+			status: 'idle',
+			deviceLabel: null,
+			deviceSerial: null
+		}));
+	},
+
+	/**
+	 * Toggle between real WebUSB and the in-browser mock device. Disconnects
+	 * any existing adapter so the next `connect()` call rebuilds with the new
+	 * preference.
+	 */
+	async setPreferMock(preferMock: boolean) {
+		await teardownAdapter();
+		_store.update((s) => ({
+			...s,
+			preferMock,
+			status: 'idle',
+			error: null,
+			deviceLabel: null,
+			deviceSerial: null
+		}));
 	},
 
 	async flash(hexUrl: string) {
@@ -88,11 +146,6 @@ export const connection = {
 		await a.send(command);
 	},
 
-	/**
-	 * Subscribe to a sensor stream from the device. Returns an unsubscribe
-	 * function. Named `streamSensor` (not `subscribe`) to avoid colliding with
-	 * the store's `subscribe` method that backs `$connection`.
-	 */
 	async streamSensor(sensor: Sensor, cb: (values: number[]) => void): Promise<() => void> {
 		const a = await ensureAdapter();
 		const off = onEvent((e) => {
@@ -113,7 +166,7 @@ export const connection = {
 };
 
 if (browser) {
-	// Eagerly create the adapter so the listener is wired up — keeps event flow
-	// consistent regardless of which page first interacts with hardware.
-	void ensureAdapter();
+	_store.update((s) => ({ ...s, webusbSupported: isWebUsbSupported() }));
+	// Don't eagerly create the adapter — real WebUSB requires the requestDevice
+	// call to be inside a user gesture, so we wait for the user to click Connect.
 }
