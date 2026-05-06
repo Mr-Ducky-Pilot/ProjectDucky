@@ -11,7 +11,6 @@ const meta: MissionMeta = {
 	duckyIntro: 'Tap the squares to draw, then beam it over.',
 	hardware: ['led-matrix'],
 	pairMode: false,
-	hexVariant: 'universal',
 	estMinutes: 6,
 	remixPrompts: [
 		'Make a flipbook: send pattern, change one pixel, send again.',

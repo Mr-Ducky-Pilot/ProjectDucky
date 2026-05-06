@@ -96,7 +96,7 @@
 				<button type="button" class="pop-btn pop-btn--blue">Blue</button>
 				<button type="button" class="pop-btn pop-btn--coral">Coral</button>
 				<button type="button" class="pop-btn pop-btn--ghost">Ghost</button>
-				<FlashButton hexUrl="" />
+				<FlashButton />
 				<ConnectionBar />
 			</div>
 		</section>

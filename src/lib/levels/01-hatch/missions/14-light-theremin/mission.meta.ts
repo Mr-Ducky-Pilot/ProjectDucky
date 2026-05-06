@@ -11,7 +11,6 @@ const meta: MissionMeta = {
 	duckyIntro: 'Hover your hand over the chip and slowly move it up and down.',
 	hardware: ['light', 'speaker'],
 	pairMode: false,
-	hexVariant: 'universal',
 	estMinutes: 4,
 	remixPrompts: [
 		'Try a torch — fast pitch changes!',

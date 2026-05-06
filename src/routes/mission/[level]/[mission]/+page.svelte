@@ -134,6 +134,8 @@
 				<div class="flex flex-wrap items-center gap-3">
 					{#if mission.preset}
 						<FlashButton preset={mission.preset} onFlashed={complete} />
+					{:else if mission.level === 1}
+						<FlashButton label="Start Ducky" flashedLabel="Ducky is ready!" />
 					{/if}
 					{#if nextMission}
 						<a

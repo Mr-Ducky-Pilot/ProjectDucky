@@ -51,12 +51,12 @@
 			return;
 		}
 
+		// Board resets after flash — always wait for MicroPython to boot before
+		// sending any serial commands, otherwise they are lost.
+		booting = true;
+		await connection.waitForReady();
+		booting = false;
 		if (preset) {
-			// Board resets after flash — wait for MicroPython to boot before
-			// sending serial commands, otherwise they're lost.
-			booting = true;
-			await connection.waitForReady();
-			booting = false;
 			try {
 				await connection.send({ type: 'preset', name: preset });
 			} catch {

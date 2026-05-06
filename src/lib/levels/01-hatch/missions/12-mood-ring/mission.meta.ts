@@ -11,7 +11,6 @@ const meta: MissionMeta = {
 	duckyIntro: 'Pick the sensor. Pick the threshold. I’ll be happy when it crosses.',
 	hardware: ['accel', 'mic', 'light', 'temp', 'led-matrix'],
 	pairMode: false,
-	hexVariant: 'universal',
 	estMinutes: 5,
 	remixPrompts: [
 		'Set a really mean threshold and try to make Ducky happy.',

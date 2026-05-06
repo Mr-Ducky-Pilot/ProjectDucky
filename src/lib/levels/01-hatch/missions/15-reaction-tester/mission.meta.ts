@@ -11,7 +11,6 @@ const meta: MissionMeta = {
 	duckyIntro: 'Wait for green. Don’t jump the gun!',
 	hardware: ['buttons', 'led-matrix'],
 	pairMode: false,
-	hexVariant: 'universal',
 	estMinutes: 4,
 	remixPrompts: [
 		'Race a friend, side by side, two ducks.',
