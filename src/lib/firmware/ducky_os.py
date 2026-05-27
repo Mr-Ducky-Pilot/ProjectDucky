@@ -1,7 +1,7 @@
 # Ducky OS — universal-listener firmware for the Ducky kit
 #
 # Speaks a tiny line-delimited protocol over the USB serial:
-#   M:01010...        set 5x5 matrix bitmap (25 chars)
+#   M:01010...        set 5x5 matrix bitmap (25 chars, 0=off 9=bright)
 #   N:hello world     scroll text on the matrix
 #   F:happy           show a named face
 #   T:C4,200;E4,400   play a tone sequence (note,ms;...)
@@ -9,7 +9,7 @@
 #   S!light           unsubscribe
 #   P:heartbeat       run a named preset
 #   R:42              radio: send a number
-#   Q                 stop the current preset
+#   Q                 stop the current preset, clear display
 #
 # Emits back:
 #   <S accel x,y,z>   sensor sample
@@ -23,21 +23,29 @@ import radio, music
 
 uart.init(baudrate=115200)
 
-# --- Pictures ---
+# --- Pictures (all lit pixels at brightness 9 = 100%) ---
 FACES = {
-    'happy':  Image("00000:01010:00000:10001:01110"),
-    'sad':    Image("00000:01010:00000:01110:10001"),
-    'wink':   Image("00000:01000:00010:10001:01110"),
-    'wave':   Image("00100:01110:11111:01110:00100"),
-    'sleep':  Image("00000:11011:00000:01110:00000"),
-    'duck':   Image("01100:11110:11111:01110:00000"),
-    'dizzy':  Image("10001:01010:00100:01010:10001"),
+    'happy':  Image("00000:09090:00000:90009:09990"),
+    'sad':    Image("00000:09090:00000:09990:90009"),
+    'wink':   Image("00000:09000:00090:90009:09990"),
+    'wave':   Image("00900:09990:99999:09990:00900"),
+    'sleep':  Image("00000:99099:00000:09990:00000"),
+    'duck':   Image("09900:99990:99999:09990:00000"),
+    'dizzy':  Image("90009:09090:00900:09090:90009"),
 }
-BIG_HEART   = Image("01010:11111:11111:01110:00100")
-SMALL_HEART = Image("00000:01110:01110:00100:00000")
+BIG_HEART   = Image("09090:99999:99999:09990:00900")
+SMALL_HEART = Image("00000:09990:09990:00900:00000")
+
+# Custom arrows at full brightness (9)
 ARROWS = [
-    Image.ARROW_N, Image.ARROW_NE, Image.ARROW_E, Image.ARROW_SE,
-    Image.ARROW_S, Image.ARROW_SW, Image.ARROW_W, Image.ARROW_NW
+    Image("00900:09990:90909:00900:00900"),   # N
+    Image("00999:00099:00909:09000:90000"),   # NE
+    Image("00900:00090:99999:00090:00900"),   # E
+    Image("90000:09000:00909:00099:00999"),   # SE
+    Image("00900:00900:90909:09990:00900"),   # S
+    Image("00009:00090:90900:99000:99900"),   # SW
+    Image("00900:09000:99999:09000:00900"),   # W
+    Image("99900:99000:90900:00090:00009"),   # NW
 ]
 
 # --- Notes ---
@@ -59,7 +67,9 @@ light_thresh = 50    # adjustable via L:<value> command
 
 # --- Helpers ---
 def parse_matrix(bits):
-    rows = [bits[r * 5:r * 5 + 5] for r in range(5)]
+    # Promote any '1' to '9' for full brightness
+    bits9 = bits.replace('1', '9')
+    rows = [bits9[r * 5:r * 5 + 5] for r in range(5)]
     return Image(":".join(rows))
 
 def play_tones(s):
@@ -93,9 +103,9 @@ def sample(s):
     return None
 
 def bargraph(value, max_value):
-    """Return an Image where the bottom N rows are lit, scaled 0..max."""
+    """Return an Image where the bottom N rows are lit at full brightness."""
     lit = max(0, min(5, int((value / max_value) * 5)))
-    rows = ["11111" if (4 - r) < lit else "00000" for r in range(5)]
+    rows = ["99999" if (4 - r) < lit else "00000" for r in range(5)]
     return Image(":".join(rows))
 
 # --- Command handler ---
@@ -117,7 +127,6 @@ def handle(line):
         except:
             pass
     elif c == 'N':
-        # loop=True keeps scrolling forever; trailing space gives the eye a gap
         display.scroll(rest + ' ', delay=120, wait=False, loop=True)
     elif c == 'F':
         if rest in FACES:
@@ -158,7 +167,6 @@ def tick():
             display.show(BIG_HEART if state['b'] else SMALL_HEART)
 
     elif preset == 'tap-wake':
-        # Idle: gentle pulse so the kid knows it's listening
         if n - state.get('t', 0) > 1500:
             state['t'] = n
             display.show(Image.ASLEEP)
@@ -217,7 +225,7 @@ def tick():
 # --- Boot ---
 radio.config(channel=42, group=42)
 radio.on()
-display.show(FACES['duck'])
+display.clear()   # blank on boot — preset or Interactive takes over immediately
 print('<L Ducky OS ready>')
 
 # --- Main loop ---
@@ -275,7 +283,6 @@ while True:
                 last_logo = True
                 print('<T down>')
                 if preset == 'touch-logo':
-                    # Descending quack: three quick tones
                     music.pitch(1100, 70, wait=True)
                     music.pitch(750, 90, wait=True)
                     music.pitch(450, 120, wait=True)

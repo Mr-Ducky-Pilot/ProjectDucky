@@ -1,26 +1,20 @@
 <script lang="ts">
 	import { connection } from '$lib/stores/connection';
 	import { setMood, say } from '$lib/stores/ducky';
-	import { buildDuckyHex } from '$lib/firmware/build';
+	import { buildCustomHex } from '$lib/firmware/build';
 
 	type Props = {
-		preset?: string;
+		code: string;
+		disabled?: boolean;
 		label?: string;
-		flashedLabel?: string;
 		onFlashed?: () => void;
 	};
 
-	let {
-		preset,
-		label = 'Send to Ducky',
-		flashedLabel = 'Sent!',
-		onFlashed
-	}: Props = $props();
+	let { code, disabled = false, label = 'Flash My Code!', onFlashed }: Props = $props();
 
 	const conn = connection;
-	let justFlashed = $state(false);
 	let building = $state(false);
-	let booting = $state(false);
+	let justFlashed = $state(false);
 	let localError = $state<string | null>(null);
 
 	async function flash() {
@@ -34,7 +28,7 @@
 		building = true;
 		let hex: ArrayBuffer;
 		try {
-			hex = await buildDuckyHex();
+			hex = await buildCustomHex(code);
 		} catch (err) {
 			localError = err instanceof Error ? err.message : 'Failed to build firmware.';
 			setMood('sad');
@@ -51,36 +45,15 @@
 			return;
 		}
 
-		// Board resets after flash — always wait for MicroPython to boot before
-		// sending any serial commands, otherwise they are lost.
-		booting = true;
-		await connection.waitForReady();
-		booting = false;
-		if (preset) {
-			try {
-				await connection.send({ type: 'preset', name: preset });
-			} catch {
-				// non-fatal
-			}
-		} else {
-			// No preset (L1 missions) — clear the display so the board shows blank
-			// while the Interactive takes over, not duck face from the boot sequence.
-			try {
-				await connection.send({ type: 'matrix', bits: Array(25).fill(false) });
-			} catch {
-				// non-fatal
-			}
-		}
-
 		justFlashed = true;
 		setMood('celebrating');
-		say('Done — try it out!', 'celebrating');
+		say('Your code is running!', 'celebrating');
 		onFlashed?.();
-		setTimeout(() => (justFlashed = false), 1800);
+		setTimeout(() => (justFlashed = false), 2500);
 	}
 
 	const busy = $derived(
-		building || booting || $conn.status === 'flashing' || $conn.status === 'requesting'
+		building || $conn.status === 'flashing' || $conn.status === 'requesting'
 	);
 </script>
 
@@ -88,7 +61,7 @@
 	<button
 		type="button"
 		onclick={flash}
-		disabled={busy}
+		disabled={busy || disabled}
 		class="pop-btn pop-btn--yellow w-full sm:w-auto"
 	>
 		{#if building}
@@ -97,12 +70,12 @@
 			Connecting…
 		{:else if $conn.status === 'flashing'}
 			Flashing… {Math.round(($conn.flash?.pct ?? 0) * 100)}%
-		{:else if booting}
-			Booting Ducky…
 		{:else if justFlashed}
-			✅ {flashedLabel}
+			✅ Running on Ducky!
+		{:else if disabled}
+			Fill all the blanks first
 		{:else}
-			{label}
+			⚡ {label}
 		{/if}
 	</button>
 	{#if localError}

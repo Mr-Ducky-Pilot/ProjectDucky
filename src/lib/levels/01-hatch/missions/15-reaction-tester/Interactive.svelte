@@ -22,17 +22,19 @@
 		phase === 'go' ? '#7ad44b' : phase === 'jumped' ? '#ff7a6b' : '#ffd23a'
 	);
 
-	// Mirror each phase change to the board
-	$effect(() => {
-		void connection.send({ type: 'matrix', bits }).catch(() => {});
-	});
+	// Send board state explicitly on each transition (avoids $effect reactivity edge cases)
+	function sendBits(b: boolean[]) {
+		void connection.send({ type: 'matrix', bits: b }).catch(() => {});
+	}
 
 	function start() {
 		phase = 'wait';
+		sendBits(ALL_OFF);
 		const delay = 800 + Math.random() * 2200;
 		timer = setTimeout(() => {
 			phase = 'go';
 			startedAt = performance.now();
+			sendBits(ALL_ON);
 		}, delay);
 	}
 
@@ -40,19 +42,23 @@
 		if (phase === 'wait') {
 			if (timer) clearTimeout(timer);
 			phase = 'jumped';
+			sendBits(X_BITS);
 			return;
 		}
 		if (phase === 'go') {
 			lastMs = Math.round(performance.now() - startedAt);
 			if (bestMs === null || lastMs < bestMs) bestMs = lastMs;
 			phase = 'result';
+			sendBits(X_BITS);
 			return;
 		}
+		// idle / result / jumped → start a new round
 		start();
 	}
 
-	// Wire board button A → tap
+	// Wire board button A → tap (single press is fine — navigation uses AA double-press)
 	onMount(() => {
+		sendBits(ALL_OFF);  // clear board on mount
 		const off = connection.onEvent((e) => {
 			if (e.type === 'button' && e.button === 'A' && e.phase === 'down') tap();
 		});
@@ -85,7 +91,7 @@
 	</button>
 
 	<p class="text-center text-xs text-(--color-night-soft)">
-		Tap the button above <em>or</em> press button A on the chip
+		Tap the button above <em>or</em> press button A on the chip (single tap)
 	</p>
 
 	<div class="flex gap-4 text-center">

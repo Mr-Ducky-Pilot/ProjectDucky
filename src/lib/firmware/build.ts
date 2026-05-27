@@ -43,3 +43,17 @@ export async function buildDuckyHex(): Promise<ArrayBuffer> {
 export function invalidateDuckyHex(): void {
 	hexCache = null;
 }
+
+/**
+ * Build a custom hex from an arbitrary MicroPython source string.
+ * Used by Level 2 (Waddle) missions where kids write their own code.
+ * Not cached — user code changes on every call.
+ */
+export async function buildCustomHex(source: string): Promise<ArrayBuffer> {
+	const runtime = await fetchRuntime();
+	const fs = new MicropythonFsHex(runtime);
+	fs.write('main.py', source);
+	const hexString = fs.getIntelHex();
+	const encoder = new TextEncoder();
+	return encoder.encode(hexString).buffer as ArrayBuffer;
+}

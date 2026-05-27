@@ -32,17 +32,29 @@
 		};
 	});
 
-	// Board button B = next mission, A = previous mission
+	// Board button navigation: double-tap AA = previous, BB = next (within 2s).
+	// Single press is passed through to the active mission's own game logic.
 	onMount(() => {
+		let lastA = 0, lastB = 0;
+		const DOUBLE_MS = 2000;
+
 		const off = connection.onEvent((e) => {
 			if (e.type !== 'button' || e.phase !== 'down') return;
-			if (e.button === 'B' && data.nextMission) {
-				const m = data.nextMission;
-				void goto(`/mission/${m.level}/${m.id}`);
-			}
-			if (e.button === 'A' && data.prevMission) {
-				const m = data.prevMission;
-				void goto(`/mission/${m.level}/${m.id}`);
+			const now = Date.now();
+			if (e.button === 'B') {
+				if (now - lastB <= DOUBLE_MS && data.nextMission) {
+					lastB = 0;
+					void goto(`/mission/${data.nextMission.level}/${data.nextMission.id}`);
+				} else {
+					lastB = now;
+				}
+			} else if (e.button === 'A') {
+				if (now - lastA <= DOUBLE_MS && data.prevMission) {
+					lastA = 0;
+					void goto(`/mission/${data.prevMission.level}/${data.prevMission.id}`);
+				} else {
+					lastA = now;
+				}
 			}
 		});
 		return off;
