@@ -13,7 +13,7 @@
 	let {
 		preset,
 		label = 'Send to Ducky',
-		flashedLabel = 'Sent!',
+		flashedLabel = 'Done!',
 		onFlashed
 	}: Props = $props();
 
@@ -23,8 +23,37 @@
 	let booting = $state(false);
 	let localError = $state<string | null>(null);
 
+	const alreadyLoaded = $derived(
+		$conn.status === 'connected' && $conn.lastFlashedFirmware === 'ducky-os'
+	);
+
+	async function activate() {
+		// Board is already running Ducky OS — skip the 30s flash, just send preset
+		booting = true;
+		try {
+			if (preset) {
+				await connection.send({ type: 'preset', name: preset });
+			} else {
+				await connection.send({ type: 'matrix', bits: Array(25).fill(false) });
+			}
+		} catch {
+			// non-fatal — board is live
+		}
+		booting = false;
+		justFlashed = true;
+		setMood('celebrating');
+		say('Done — try it out!', 'celebrating');
+		onFlashed?.();
+		setTimeout(() => (justFlashed = false), 1800);
+	}
+
 	async function flash() {
 		localError = null;
+
+		if (alreadyLoaded) {
+			await activate();
+			return;
+		}
 
 		if ($conn.status === 'idle') {
 			await connection.connect();
@@ -43,7 +72,7 @@
 		}
 		building = false;
 
-		await connection.flash(hex);
+		await connection.flash(hex, 'ducky-os');
 		const after = connection.getState();
 		if (after.status === 'error') {
 			localError = after.error;
@@ -51,8 +80,7 @@
 			return;
 		}
 
-		// Board resets after flash — always wait for MicroPython to boot before
-		// sending any serial commands, otherwise they are lost.
+		// Board resets after flash — wait for MicroPython to boot before sending commands
 		booting = true;
 		await connection.waitForReady();
 		booting = false;
@@ -63,8 +91,7 @@
 				// non-fatal
 			}
 		} else {
-			// No preset (L1 missions) — clear the display so the board shows blank
-			// while the Interactive takes over, not duck face from the boot sequence.
+			// L1 missions — clear display so Interactive takes over
 			try {
 				await connection.send({ type: 'matrix', bits: Array(25).fill(false) });
 			} catch {
@@ -98,9 +125,11 @@
 		{:else if $conn.status === 'flashing'}
 			Flashing… {Math.round(($conn.flash?.pct ?? 0) * 100)}%
 		{:else if booting}
-			Booting Ducky…
+			{alreadyLoaded ? 'Activating…' : 'Booting Ducky…'}
 		{:else if justFlashed}
 			✅ {flashedLabel}
+		{:else if alreadyLoaded && preset}
+			Activate ▶
 		{:else}
 			{label}
 		{/if}

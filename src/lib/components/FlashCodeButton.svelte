@@ -37,7 +37,7 @@
 		}
 		building = false;
 
-		await connection.flash(hex);
+		await connection.flash(hex, 'custom');
 		const after = connection.getState();
 		if (after.status === 'error') {
 			localError = after.error;

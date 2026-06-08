@@ -21,6 +21,7 @@ type ConnState = {
 	deviceSerial: string | null;
 	webusbSupported: boolean;
 	preferMock: boolean;
+	lastFlashedFirmware: 'ducky-os' | 'custom' | null;
 };
 
 const initial: ConnState = {
@@ -31,7 +32,8 @@ const initial: ConnState = {
 	deviceLabel: null,
 	deviceSerial: null,
 	webusbSupported: false,
-	preferMock: false
+	preferMock: false,
+	lastFlashedFirmware: null
 };
 
 const _store = writable<ConnState>(initial);
@@ -105,7 +107,8 @@ export const connection = {
 			...s,
 			status: 'idle',
 			deviceLabel: null,
-			deviceSerial: null
+			deviceSerial: null,
+			lastFlashedFirmware: null
 		}));
 	},
 
@@ -126,18 +129,19 @@ export const connection = {
 		}));
 	},
 
-	async flash(source: FlashSource) {
+	async flash(source: FlashSource, firmware: 'ducky-os' | 'custom' = 'custom') {
 		const a = await ensureAdapter();
 		_store.update((s) => ({ ...s, status: 'flashing', flash: { phase: 'erasing', pct: 0 } }));
 		try {
 			await a.flash(source, (p) => _store.update((s) => ({ ...s, flash: p })));
-			_store.update((s) => ({ ...s, status: 'connected', flash: null }));
+			_store.update((s) => ({ ...s, status: 'connected', flash: null, lastFlashedFirmware: firmware }));
 		} catch (err) {
 			_store.update((s) => ({
 				...s,
 				status: 'error',
 				error: err instanceof Error ? err.message : String(err),
-				flash: null
+				flash: null,
+				lastFlashedFirmware: null
 			}));
 		}
 	},

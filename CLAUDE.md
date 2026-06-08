@@ -90,7 +90,7 @@ Single line-delimited ASCII protocol over USB serial (115200 baud).
 | `preset` | `P:heartbeat` | Activate a named behaviour preset |
 | `light-threshold` | `L:80` | Update hide-peek light threshold live |
 | `radio-send` | `R:1` | Broadcast a radio packet |
-| `quit` | `Q` | Stop current preset, show duck face |
+| `quit` | `Q` | Stop current preset, return to on-board menu |
 
 ### Board → Browser
 
@@ -114,22 +114,26 @@ Single universal-listener Python script. Key behaviours:
 - Parses commands from UART in the main loop (non-blocking `uart.read()`).
 - `preset` variable determines the active tick behaviour.
 - Sensor streaming runs independently of preset (any sensor can be subscribed at any time).
-- Logo touch uses a **4-poll debounce** (~60ms) before firing.
+- **On-board navigation** (standalone, no computer needed after one flash):
+  - Boot → duck face (1s) → Menu mode showing mini-icon for selected activity
+  - **A** = previous activity, **B** = next activity, **logo tap** = activate (enter Play mode)
+  - **Logo held ≥1.5s** = always return to Menu (works from any preset)
+  - Logo touch in `touch-logo` preset: short tap = quack, long hold = menu
+- `P:preset` from browser overrides menu and activates preset immediately (backward compatible)
+- `Q` command returns to on-board menu (was: blank screen)
 - Quack sound: 3-note descending sequence (1100→750→450 Hz) in the `touch-logo` preset.
 
-### Presets (L0 missions)
+### Presets (L0 missions) + PRESET_LIST order
 
-| Preset | Mission | Behaviour |
-|---|---|---|
-| `heartbeat` | 02 | Alternates big/small heart every 600ms |
-| `tap-wake` | 03 | Sleepy idle; happy face on button A |
-| `shake` | 04 | Dizzy on >1.5g shake; happy face to recover |
-| `cold-hands` | 05 | Bargraph of `temperature() - 18` |
-| `hide-peek` | 06 | Happy/sad based on light vs `light_thresh` |
-| `whisper` | 07 | Mic bargraph on LED matrix |
-| `touch-logo` | 08 | 3-note descending quack + happy face on logo touch |
-| `compass-quest` | 09 | 8-direction arrow on LED matrix |
-| `wave-across` | 10 | Button A → radio send 'w'; receive → wave animation |
+| Preset | Mission | Behaviour | Menu icon |
+|---|---|---|---|
+| `heartbeat` | 02 | Alternates big/small heart every 600ms | heart outline |
+| `tap-wake` | 03 | Sleepy idle; happy face on button A | sleep face |
+| `shake` | 04 | Dizzy on >1.5g shake; happy face to recover | X / dizzy |
+| `hide-peek` | 06 | Happy/sad based on light vs `light_thresh` | plain face |
+| `whisper` | 07 | Mic bargraph on LED matrix | sound burst |
+| `touch-logo` | 08 | 3-note descending quack + happy face on logo touch | duck |
+| `compass-quest` | 09 | 8-direction arrow on LED matrix | N arrow |
 
 ---
 
@@ -166,14 +170,32 @@ Mission 01 has no preset — its Interactive handles flash + send inline.
 
 ## Hex Assembly Flow
 
+**L0/L1 (Ducky OS firmware) — smart skip:**
 ```
-User clicks "Send to Ducky"
-  → buildDuckyHex()              fetch /static/firmware/micropython-v2.hex (cached)
-                                  + write ducky_os.py via @microbit/microbit-fs
-                                  → returns ArrayBuffer
-  → connection.flash(buffer)     DAPLink flashes, board resets
-  → connection.waitForReady()    waits for "<L Ducky OS ready>" (5s timeout)
-  → connection.send({type:'preset', name})  sends P:<preset>
+FlashButton click
+  IF connected AND lastFlashedFirmware === 'ducky-os':
+    → skip flash entirely (near-instant)
+    → connection.send({type:'preset', name})  or matrix clear
+    → button label shows "Activate ▶" instead of "Send to Ducky"
+  ELSE:
+    → buildDuckyHex()              fetch runtime (cached) + assemble hex (cached)
+    → connection.flash(buffer, 'ducky-os')  DAPLink flashes, board resets
+    → connection.waitForReady()    waits for "<L Ducky OS ready>" (5s timeout)
+    → connection.send({type:'preset', name})  or matrix clear
+    → sets lastFlashedFirmware = 'ducky-os' in store
+```
+
+Level 0/1 overview page also shows a "Flash Ducky" card — flash once there and all missions are instant.
+
+**L2 (custom user code):**
+```
+FlashCodeButton click (inside Interactive.svelte)
+  → buildCustomHex(source)           fetch runtime (cached) + write user's main.py
+                                      → returns ArrayBuffer (NOT cached — code changes each time)
+  → connection.flash(buffer, 'custom')  DAPLink flashes, board resets
+  → board boots → runs main.py automatically (user code, no ready signal sent)
+  → sets lastFlashedFirmware = 'custom' — returning to L0/L1 will re-flash Ducky OS
+  → no waitForReady() needed — board is self-contained after flash
 ```
 
 ---
@@ -242,26 +264,75 @@ Font: `font-display` = Nunito (rounded, kid-friendly). `font-mono` = JetBrains M
 
 ---
 
-## What's Complete (Level 0)
+## What's Complete
 
-All 10 L0 missions are fully wired:
-- Browser Interactive components with real-time sensor display
-- `code.md` + `concept.md` explainer cards
-- `ducky_os.py` firmware presets
-- FlashButton → buildDuckyHex → waitForReady → P:<preset> flow
-- Sensor auto-resubscribe after flash
-- Board cleanup (Q command) on mission navigation
-- A/B button navigation between missions (B = next, A = prev)
+### Level 0 — Egg (8 missions: 01–09, minus 05 + 10 removed)
+- All missions fully wired with Browser Interactive + firmware presets
+- `code.md` + `concept.md` explainer cards on every mission
+- `ducky_os.py` firmware: all presets implemented at 100% LED brightness (brightness 9)
+- FlashButton → buildDuckyHex → waitForReady → P:`<preset>` flow
+- Sensor auto-resubscribe after flash via `connection.onReady()`
+- Board cleanup (`Q` command) sent on mission navigation
+- Double-press A/B navigation (AA = prev, BB = next within 2s — single press passes through to game)
 - Light threshold live-tuning (mission 06)
-- Browser quack with audio toggle (mission 08)
-- Next/prev mission navigation with emoji breadcrumbs
+- Browser quack + audio toggle (mission 08)
+- Boot now calls `display.clear()` instead of showing duck face (no random pattern between missions)
+- Removed: `05-cold-hands` (less engaging), `10-wave-across` (requires 2 boards)
+
+### Level 1 — Hatch (9 missions: 11, 13–20, minus 12 removed)
+- All missions use Ducky OS universal firmware — no preset, browser sends commands directly
+- FlashButton labelled "Start Ducky" shown at page level for all L1 missions
+- After waitForReady: sends `M:000…` to clear display (blank slate for Interactive)
+- `11-drawing-pad` — 5×5 paint grid, beam to board via `M:` command
+- `13-welcome-jingle` — piano keyboard, plays via `T:` sequence + browser audio toggle
+- `14-light-theremin` — light sensor → pitch mapping via `S?light` + `T:` per note
+- `15-reaction-tester` — all-on/all-off matrix phases, board button A wires to tap
+- `16-pixel-animator` — 3-frame flipbook, `M:` on timer
+- `17-dice-roller` — shake detection via `S?accel`, dice dot patterns via `M:`
+- `18-step-counter` — step state machine on accel stream, bargraph via `M:`
+- `19-sound-alarm` — arm/disarm toggle, mic threshold, siren `T:` + flash `M:`
+- `20-metronome` — BPM slider, tap-tempo, browser + board beat sync
+- Removed: `12-mood-ring` (covered better by L0 Hide & Peek)
+
+### Level 2 — Waddle (6 missions: 21–26)
+- New component: `CodeEditor.svelte` — dark code block with `___` gaps as inline yellow inputs, "blanks left" counter
+- New component: `FlashCodeButton.svelte` — like FlashButton but calls `buildCustomHex(code)` with user-assembled source; disabled until all gaps filled
+- New component: `YourTurn.svelte` — dashed-border checklist challenge panel with celebration on completion
+- New function: `buildCustomHex(source)` in `build.ts` — uncached, wraps same `@microbit/microbit-fs` as `buildDuckyHex`
+- `21-clap-counter` — variables + single `if`, mic threshold + counter increment + sleep
+- `22-mood-machine` — `if`/`elif`/`else`, two temperature thresholds → face
+- `23-steady-hand` — compound condition + best-tracking, wobble limit + update speed
+- `24-button-race` — game state + events, WIN target + two victory messages
+- `25-night-light` — `for` loop + music API, dark threshold + flash count + tune name
+- `26-dot-mover` — 2D coordinates + wrapping, start x/y + right edge value
+- Each mission: `mission.meta.ts`, `Interactive.svelte`, `concept.md`, `code.md`
+- Page-level FlashButton not shown for L2 (Interactive handles its own CodeEditor + FlashCodeButton)
+
+### Infrastructure complete
+- `ducky_os.py` universal firmware with all L0 presets + L1 command listener
+- Dynamic hex assembly (`@microbit/microbit-fs`) for both Ducky OS and custom user code
+- Mock WebUSB adapter for browser-only development
+- Mission auto-discovery via `import.meta.glob` (drop a folder, it appears)
+- Progress tracking in localStorage
+- `MISSIONS.md` — full mission reference for all levels
 
 ---
 
 ## What's Next
 
-- Level 1 (Hatch) Interactive components — drawing pad, piano, mood ring, theremin, reaction tester
-- These use the same Ducky OS firmware (universal listener), no extra presets needed
-- L1 sends commands directly: `M:` for matrix, `T:` for tones, `S?` for sensors
-- Snake game / simple games are good L2 block-coding missions
-- OLED display integration deferred to V2 (hardware risk)
+### Level 2 polish
+- Add `YourTurn` challenges to all 9 L1 missions (designs in `MISSIONS.md`)
+- L2 Interactive improvements: show a live "what your code will do" preview per mission
+
+### Level 3 — Swim (Radio pair missions, planned)
+- Requires 2 boards; radio protocol already in Ducky OS (`R:` command, `<R …>` events)
+- Missions: Secret Handshake, Hot Potato, Morse Code
+
+### Level 4 — Feather (Blocks ↔ JavaScript reveal, planned)
+
+### Level 5 — Soar (Open MicroPython sandbox, planned)
+
+### Deferred
+- OLED display integration (hardware risk, V2)
+- Real Ducky illustrations (SVG placeholders ship now)
+- Backend / accounts / sharing (V2 backlog)
