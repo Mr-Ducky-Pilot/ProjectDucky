@@ -40,6 +40,8 @@ export type OutgoingCommand =
 	| { type: 'preset'; name: string }
 	| { type: 'light-threshold'; value: number }
 	| { type: 'radio-send'; payload: number }
+	| { type: 'oled-text'; lines: string[] /* 1–4 lines, joined by | on the wire */ }
+	| { type: 'oled-clear' }
 	| { type: 'quit' };
 
 export type IncomingEvent =
@@ -69,6 +71,10 @@ export function encode(cmd: OutgoingCommand): string {
 			return 'L:' + cmd.value + '\n';
 		case 'radio-send':
 			return 'R:' + cmd.payload + '\n';
+		case 'oled-text':
+			return 'O:' + cmd.lines.join('|') + '\n';
+		case 'oled-clear':
+			return 'O:clear\n';
 		case 'quit':
 			return 'Q\n';
 	}

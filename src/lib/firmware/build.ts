@@ -1,6 +1,7 @@
 import { MicropythonFsHex } from '@microbit/microbit-fs';
-// `?raw` import: Vite ships the Python source as a string in the JS bundle.
+// `?raw` imports: Vite ships the Python source as strings in the JS bundle.
 import duckyOsSource from './ducky_os.py?raw';
+import ssd1327Source from './ssd1327.py?raw';
 
 const RUNTIME_URL = '/firmware/micropython-v2.hex';
 
@@ -33,6 +34,7 @@ export async function buildDuckyHex(): Promise<ArrayBuffer> {
 	const runtime = await fetchRuntime();
 	const fs = new MicropythonFsHex(runtime);
 	fs.write('main.py', duckyOsSource);
+	fs.write('ssd1327.py', ssd1327Source);
 	const hexString = fs.getIntelHex();
 	const encoder = new TextEncoder();
 	hexCache = encoder.encode(hexString).buffer as ArrayBuffer;
@@ -53,6 +55,7 @@ export async function buildCustomHex(source: string): Promise<ArrayBuffer> {
 	const runtime = await fetchRuntime();
 	const fs = new MicropythonFsHex(runtime);
 	fs.write('main.py', source);
+	fs.write('ssd1327.py', ssd1327Source);   // available for L2 kids: from ssd1327 import OLED
 	const hexString = fs.getIntelHex();
 	const encoder = new TextEncoder();
 	return encoder.encode(hexString).buffer as ArrayBuffer;

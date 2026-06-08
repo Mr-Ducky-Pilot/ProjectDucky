@@ -9,6 +9,8 @@
 #   S!light           unsubscribe
 #   P:heartbeat       run a named preset (also exits menu mode)
 #   R:42              radio: send a number
+#   O:line1|line2     show text on Grove OLED (if connected)
+#   O:clear           clear Grove OLED
 #   Q                 stop current preset, return to on-board menu
 #
 # Emits back:
@@ -25,6 +27,7 @@
 
 from microbit import *
 import radio, music
+from ssd1327 import OLED
 
 uart.init(baudrate=115200)
 
@@ -73,6 +76,10 @@ MENU_ICONS = {
     'compass-quest': Image("00900:09990:90909:00900:00900"),   # N arrow
 }
 
+# Precomputed integer compass spoke vectors for 8 directions (24px radius)
+# N, NE, E, SE, S, SW, W, NW — index matches ARROWS order
+_CV = [(0,-24),(17,-17),(24,0),(17,17),(0,24),(-17,17),(-24,0),(-17,-17)]
+
 # --- State ---
 subs = set()
 preset = None
@@ -84,9 +91,87 @@ light_thresh = 50
 menu_mode = False    # True while navigating the on-board menu
 menu_idx = 0        # index into PRESET_LIST
 
-# Long-press logo tracking (replaces old poll-count debounce)
-logo_hold_start = 0  # running_time() when logo first touched; 0 = not touching
-logo_held = False    # True once the ≥1.5s long-press has fired (prevents re-fire)
+# Long-press logo tracking
+logo_hold_start = 0
+logo_held = False
+
+# Grove OLED 1.12" (SSD1327, 96x96) — None if not connected
+oled = None
+
+# --- OLED helpers ---
+def _draw_duck(o, x, y, c=15):
+    """Draw full duck mascot. Fits in ~72×88 px; x,y = top-left."""
+    o.fill_circle(x+36, y+60, 24, c - 2)    # body
+    o.fill_circle(x+52, y+28, 18, c)         # head
+    o.fill_rect(x+66, y+30, 14, 8, c - 5)   # bill
+    o.fill_circle(x+57, y+22, 5, 1)          # eye socket
+    o.fill_circle(x+57, y+22, 3, 0)          # pupil
+    o.pixel(x+58, y+21, 14)                  # eye shine
+    o.fill_circle(x+28, y+58, 14, c - 4)    # wing
+
+def _draw_duck_small(o, x, y, c=12):
+    """Tiny duck that fits in ~28×32 px; x,y = top-left."""
+    o.fill_circle(x+10, y+22, 8, c - 2)     # body
+    o.fill_circle(x+18, y+10, 7, c)          # head
+    o.fill_rect(x+23, y+11, 5, 3, c - 4)    # bill
+    o.pixel(x+19, y+8, 0)                    # eye
+
+def _draw_heart(o, cx, cy, r, c):
+    """Draw filled heart centred at cx,cy with approximate radius r."""
+    lobe_r = r // 2
+    o.fill_circle(cx - lobe_r, cy - lobe_r // 2, lobe_r, c)
+    o.fill_circle(cx + lobe_r, cy - lobe_r // 2, lobe_r, c)
+    # Triangle base
+    half = r
+    for dy in range(half):
+        w = half * 2 - dy * 2
+        if w > 0:
+            o.hline(cx - w // 2, cy + dy, w, c)
+
+def _boot_anim(o):
+    """~1.5s boot sequence shown on OLED while LED matrix shows duck face."""
+    # Frame 1 — egg
+    o.fill(0)
+    o.fill_circle(48, 56, 30, 7)    # egg body (gray)
+    o.circle(48, 56, 30, 11)        # egg outline (brighter)
+    o.text('waking up...', 12, 82, 6)
+    o.show()
+    sleep(320)
+
+    # Frame 2 — cracks appear
+    o.line(38, 34, 44, 46, 15)
+    o.line(50, 32, 45, 46, 15)
+    o.line(44, 46, 52, 44, 15)
+    o.show()
+    sleep(280)
+
+    # Frame 3 — head pops out of egg top
+    o.fill_rect(22, 0, 52, 38, 0)   # erase upper egg
+    o.fill_circle(48, 28, 16, 15)   # head (white)
+    o.fill_rect(62, 30, 10, 6, 10)  # bill
+    o.fill_circle(52, 23, 4, 1)     # eye
+    o.fill_circle(52, 23, 2, 0)     # pupil
+    o.pixel(53, 22, 14)             # shine
+    o.show()
+    sleep(340)
+
+    # Frame 4 — full duck + greeting
+    o.fill(0)
+    _draw_duck(o, 10, 0)
+    o.text('Hello Ducky!', 8, 87, 15)
+    o.show()
+    sleep(380)
+
+def _oled_show_menu(o):
+    o.fill(0)
+    name = PRESET_LIST[menu_idx]
+    parts = name.split('-')
+    o.big_text(parts[0], 2, 8, 15)
+    if len(parts) > 1:
+        o.big_text(parts[1], 2, 30, 10)
+    _draw_duck_small(o, 68, 2, 10)
+    o.text('A<   >B', 22, 84, 6)
+    o.show()
 
 # --- Helpers ---
 def parse_matrix(bits):
@@ -131,6 +216,8 @@ def bargraph(value, max_value):
 
 def show_menu():
     display.show(MENU_ICONS.get(PRESET_LIST[menu_idx], FACES['duck']))
+    if oled:
+        _oled_show_menu(oled)
 
 # --- Command handler ---
 def handle(line):
@@ -168,24 +255,39 @@ def handle(line):
     elif c == 'P':
         preset = rest
         state = {}
-        menu_mode = False   # browser takes over; exit on-board menu
+        menu_mode = False
         print('<L preset %s>' % rest)
     elif c == 'R':
         try:
             radio.send(rest)
         except:
             pass
+    elif c == 'O':
+        if oled:
+            try:
+                if rest == 'clear':
+                    oled.fill(0)
+                    oled.show()
+                else:
+                    lines = rest.split('|')
+                    oled.fill(0)
+                    _draw_duck_small(oled, 2, 2, 10)
+                    for i, ln in enumerate(lines[:4]):
+                        oled.text(ln, 4, 30 + i * 16, 15)
+                    oled.show()
+            except:
+                pass
     elif c == 'Q':
         preset = None
         state = {}
-        menu_mode = True    # return to on-board menu instead of blank screen
+        menu_mode = True
         show_menu()
 
 # --- Per-preset device-side behaviour ---
 def tick():
     global preset, state
     if menu_mode:
-        return   # menu navigation is handled inline in the main loop
+        return
 
     n = running_time()
 
@@ -194,11 +296,34 @@ def tick():
             state['t'] = n
             state['b'] = not state.get('b', False)
             display.show(BIG_HEART if state['b'] else SMALL_HEART)
+        if oled and n - state.get('ot', 0) > 600:
+            state['ot'] = n
+            big = state.get('b', False)
+            oled.fill(0)
+            if big:
+                _draw_heart(oled, 48, 38, 28, 15)
+                oled.text('lub dub', 22, 78, 10)
+            else:
+                _draw_heart(oled, 48, 42, 20, 14)
+                oled.text('lub dub', 22, 78, 5)
+            oled.show()
 
     elif preset == 'tap-wake':
         if n - state.get('t', 0) > 1500:
             state['t'] = n
             display.show(Image.ASLEEP)
+        if oled and n - state.get('ot', 0) > 350:
+            state['ot'] = n
+            state['oz'] = (state.get('oz', 0) + 3) % 32
+            oz = state['oz']
+            oled.fill(0)
+            _draw_duck_small(oled, 6, 6, 10)
+            # Animated Z's drifting upward
+            oled.big_text('Z', 52, 66 - oz, 15)
+            oled.big_text('z', 66, 50 - oz, 10)
+            oled.text('z', 78, 38 - oz, 7)
+            oled.text('Sleeping...', 14, 82, 7)
+            oled.show()
 
     elif preset == 'shake':
         try:
@@ -212,6 +337,24 @@ def tick():
         elif n - state.get('shaken', 0) > 600 and n - state.get('t', 0) > 500:
             state['t'] = n
             display.show(FACES['happy'])
+        if oled and n - state.get('ot', 0) > 150:
+            state['ot'] = n
+            oled.fill(0)
+            if n - state.get('shaken', 0) < 700:
+                # Dizzy rings
+                oled.circle(48, 42, 10, 15)
+                oled.circle(48, 42, 18, 12)
+                oled.circle(48, 42, 26, 8)
+                oled.circle(48, 42, 34, 5)
+                oled.big_text('WHOA!', 4, 76, 15)
+            else:
+                # Idle: shake prompt + motion lines
+                oled.big_text('SHAKE', 4, 26, 15)
+                oled.big_text('ME!', 22, 50, 12)
+                for i in range(3):
+                    oled.hline(2, 10 + i * 9, 10, 7)
+                    oled.hline(84, 10 + i * 9, 10, 7)
+            oled.show()
 
     elif preset == 'cold-hands':
         if n - state.get('t', 0) > 300:
@@ -223,6 +366,34 @@ def tick():
             state['t'] = n
             l = display.read_light_level()
             display.show(FACES['happy'] if l > light_thresh else FACES['sad'])
+        if oled and n - state.get('ot', 0) > 200:
+            state['ot'] = n
+            l = display.read_light_level()
+            oled.fill(0)
+            if l > light_thresh:
+                # Light: happy duck face on OLED
+                oled.fill_circle(48, 40, 32, 13)    # face
+                oled.fill_circle(35, 33, 6, 1)       # left eye
+                oled.fill_circle(35, 33, 3, 0)
+                oled.pixel(36, 32, 14)
+                oled.fill_circle(61, 33, 6, 1)       # right eye
+                oled.fill_circle(61, 33, 3, 0)
+                oled.pixel(62, 32, 14)
+                # Smile arc
+                for i in range(-12, 13):
+                    yy = 56 + (i * i) // 20
+                    oled.pixel(48 + i, yy, 1)
+                oled.text('Found me!', 18, 78, 15)
+            else:
+                # Dark: glowing eyes peering
+                oled.fill_circle(30, 50, 12, 4)
+                oled.fill_circle(66, 50, 12, 4)
+                oled.fill_circle(30, 52, 6, 0)
+                oled.fill_circle(66, 52, 6, 0)
+                oled.fill_circle(31, 49, 2, 12)
+                oled.fill_circle(67, 49, 2, 12)
+                oled.text('hiding...', 22, 72, 5)
+            oled.show()
 
     elif preset == 'whisper':
         if n - state.get('t', 0) > 80:
@@ -232,6 +403,24 @@ def tick():
             except:
                 v = 0
             display.show(bargraph(v, 255))
+        if oled and n - state.get('ot', 0) > 80:
+            state['ot'] = n
+            try:
+                v = microphone.sound_level()
+            except:
+                v = 0
+            oled.fill(0)
+            oled.text('Listening...', 8, 4, 9)
+            # 10 animated waveform bars
+            for bar in range(10):
+                h = max(4, int((v / 255.0) * 64) + (bar % 3) * 5 - 4)
+                bx = bar * 9 + 3
+                by = 75 - h
+                br = 15 - (abs(bar - 5)) * 2
+                oled.fill_rect(bx, by, 7, h, max(6, br))
+            if v > 180:
+                oled.big_text('LOUD!', 14, 78, 15)
+            oled.show()
 
     elif preset == 'compass-quest':
         if n - state.get('t', 0) > 300:
@@ -241,6 +430,32 @@ def tick():
             except:
                 h = 0
             display.show(ARROWS[int(((h + 22) % 360) / 45)])
+        if oled and n - state.get('ot', 0) > 300:
+            state['ot'] = n
+            try:
+                h = compass.heading()
+            except:
+                h = 0
+            idx = int(((h + 22) % 360) / 45)
+            dirs = ('N','NE','E','SE','S','SW','W','NW')
+            cx, cy = 48, 44   # centre, shifted down to leave room for N label
+            oled.fill(0)
+            oled.circle(cx, cy, 30, 5)    # compass ring
+            # 8 spokes (24px; _CV precomputed)
+            for i in range(8):
+                dx, dy = _CV[i]
+                br = 15 if i == idx else (10 if i % 2 == 0 else 5)
+                oled.line(cx, cy, cx + dx, cy + dy, br)
+            oled.fill_circle(cx, cy, 3, 15)   # centre dot
+            # Cardinal labels outside the ring (30+4=34px from centre)
+            oled.text('N', cx - 3, cy - 40, 11)   # y = 44-40 = 4
+            oled.text('S', cx - 3, cy + 32, 11)   # y = 44+32 = 76
+            oled.text('E', cx + 32, cy - 3, 11)   # x = 48+32 = 80 (fits "E")
+            oled.text('W', cx - 38, cy - 3, 11)   # x = 48-38 = 10
+            # Active direction name in big_text at very bottom
+            d = dirs[idx]
+            oled.big_text(d, 48 - len(d) * 6, 82, 15)
+            oled.show()
 
     elif preset == 'wave-across':
         pass   # button + radio handlers below do the work
@@ -249,13 +464,34 @@ def tick():
         if n - state.get('t', 0) > 1000:
             state['t'] = n
             display.show(FACES['duck'])
+        if oled and n - state.get('ot', 0) > 180:
+            state['ot'] = n
+            oled.fill(0)
+            if n - state.get('oq', 0) < 700:
+                # QUACK animation: sound waves
+                oled.big_text('QUACK!', 2, 34, 15)
+                for r in range(8, 38, 9):
+                    oled.circle(20, 48, r, max(3, 15 - r // 2))
+            else:
+                # Idle: duck mascot + prompt
+                _draw_duck(oled, 10, 2)
+                oled.text('Tap logo!', 20, 82, 9)
+            oled.show()
 
 
 # --- Boot ---
 radio.config(channel=42, group=42)
 radio.on()
+
+# Probe for Grove OLED 1.12" (also bumps I2C to 400 kHz)
+oled = OLED.probe()
+
 display.show(FACES['duck'])
-sleep(1000)
+if oled:
+    _boot_anim(oled)
+else:
+    sleep(1000)
+
 menu_mode = True
 show_menu()
 print('<L Ducky OS ready>')
@@ -297,6 +533,14 @@ while True:
             print('<B A down>')
             if preset == 'tap-wake':
                 display.show(Image.HAPPY)
+                if oled:
+                    try:
+                        oled.fill(0)
+                        oled.big_text('WAKE', 10, 26, 15)
+                        oled.big_text('UP!', 28, 50, 15)
+                        oled.show()
+                    except:
+                        pass
                 sleep(150)
                 display.show(Image.ASLEEP)
             elif preset == 'wave-across':
@@ -323,7 +567,6 @@ while True:
                 logo_hold_start = running_time()
             elif not logo_held and running_time() - logo_hold_start >= 1500:
                 logo_held = True
-                # Long press: return to menu, snap to the current preset's icon
                 try:
                     menu_idx = PRESET_LIST.index(preset)
                 except (ValueError, TypeError):
@@ -336,7 +579,6 @@ while True:
             if logo_hold_start > 0 and not logo_held:
                 # Short tap released
                 if menu_mode:
-                    # Activate the highlighted preset
                     menu_mode = False
                     preset = PRESET_LIST[menu_idx]
                     state = {}
@@ -347,6 +589,11 @@ while True:
                     music.pitch(750, 90, wait=True)
                     music.pitch(450, 120, wait=True)
                     display.show(FACES['happy'])
+                    if oled:
+                        try:
+                            state['oq'] = running_time()
+                        except:
+                            pass
                     sleep(250)
                     display.show(FACES['duck'])
                 else:

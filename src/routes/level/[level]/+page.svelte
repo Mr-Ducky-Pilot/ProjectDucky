@@ -16,6 +16,16 @@
 
 	const isDuckyLevel = $derived(data.level.id === 0 || data.level.id === 1);
 	const duckyReady = $derived($conn.lastFlashedFirmware === 'ducky-os' && $conn.status === 'connected');
+
+	async function handleFlashed() {
+		if (data.level.id === 1) {
+			try {
+				await connection.send({ type: 'oled-text', lines: ['Level 1 - Hatch', 'Pick a mission!'] });
+			} catch {
+				// non-fatal: OLED might not be connected
+			}
+		}
+	}
 </script>
 
 <section class="px-5 py-8 sm:py-12">
@@ -75,7 +85,7 @@
 				</div>
 				{#if !duckyReady}
 					<div class="shrink-0">
-						<FlashButton label="Flash Ducky" flashedLabel="Ducky is ready!" />
+						<FlashButton label="Flash Ducky" flashedLabel="Ducky is ready!" onFlashed={handleFlashed} />
 					</div>
 				{/if}
 			</div>
