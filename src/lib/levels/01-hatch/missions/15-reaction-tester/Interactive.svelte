@@ -27,14 +27,20 @@
 		void connection.send({ type: 'matrix', bits: b }).catch(() => {});
 	}
 
+	function sendOled(lines: string[]) {
+		void connection.send({ type: 'oled-text', lines }).catch(() => {});
+	}
+
 	function start() {
 		phase = 'wait';
 		sendBits(ALL_OFF);
+		sendOled(['Reaction Test', 'Wait for it...']);
 		const delay = 800 + Math.random() * 2200;
 		timer = setTimeout(() => {
 			phase = 'go';
 			startedAt = performance.now();
 			sendBits(ALL_ON);
+			sendOled(['GO!', 'Tap now!']);
 		}, delay);
 	}
 
@@ -43,6 +49,7 @@
 			if (timer) clearTimeout(timer);
 			phase = 'jumped';
 			sendBits(X_BITS);
+			sendOled(['Too early!', 'Try again...']);
 			return;
 		}
 		if (phase === 'go') {
@@ -50,6 +57,7 @@
 			if (bestMs === null || lastMs < bestMs) bestMs = lastMs;
 			phase = 'result';
 			sendBits(X_BITS);
+			sendOled([`${lastMs} ms!`, lastMs < 200 ? 'Lightning fast!' : lastMs < 280 ? 'Great!' : lastMs < 400 ? 'Good' : 'Keep practising']);
 			return;
 		}
 		// idle / result / jumped → start a new round

@@ -44,6 +44,7 @@
 		history = [r, ...history].slice(0, 8);
 
 		void connection.send({ type: 'matrix', bits: DICE_BITS[r].split('').map((c) => c === '1') }).catch(() => {});
+		void connection.send({ type: 'oled-text', lines: ['Dice Roller', `Rolled: ${r}`, diceEmoji[r]] }).catch(() => {});
 		setMood('celebrating');
 		setTimeout(() => { rolling = false; setMood('idle'); }, 600);
 	}

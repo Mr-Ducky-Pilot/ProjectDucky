@@ -86,6 +86,12 @@ export function createMockAdapter(): DeviceAdapter {
 		async send(command: OutgoingCommand) {
 			// echo back as a log so devs can see the wire traffic in /dev/components
 			emit({ type: 'log', text: `→ ${command.type}` });
+			if (command.type === 'oled-text') {
+				emit({ type: 'log', text: `OLED: ${command.lines.join(' | ')}` });
+			}
+			if (command.type === 'oled-clear') {
+				emit({ type: 'log', text: 'OLED: cleared' });
+			}
 			if (command.type === 'subscribe') {
 				subs.add(command.sensor);
 				startStream(command.sensor);

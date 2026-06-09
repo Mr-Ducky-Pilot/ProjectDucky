@@ -40,12 +40,16 @@
 	function sendProgress() {
 		const bits = progressBits(steps, goal);
 		void connection.send({ type: 'matrix', bits }).catch(() => {});
+		if (steps % 5 === 0 || steps >= goal) {
+			void connection.send({ type: 'oled-text', lines: [`Steps: ${steps}`, `Goal: ${goal}`, steps >= goal ? 'Goal reached!' : `${goal - steps} to go!`] }).catch(() => {});
+		}
 	}
 
 	function reset() {
 		steps = 0;
 		above = false;
 		void connection.send({ type: 'matrix', bits: Array(25).fill(false) }).catch(() => {});
+		void connection.send({ type: 'oled-text', lines: ['Step Counter', 'Walk around!', `Goal: ${goal}`] }).catch(() => {});
 	}
 
 	const pct = $derived(Math.min(1, steps / goal));

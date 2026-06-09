@@ -15,7 +15,8 @@ const meta: MissionMeta = {
 	remixPrompts: [
 		'Change the starting y position to move the dot to a different row.',
 		'Add button presses on shake (accelerometer) to move the dot up/down.',
-		'Make the dot leave a trail by not calling display.clear() every loop.'
+		'Make the dot leave a trail by not calling display.clear() every loop.',
+		'OLED bonus: from ssd1327 import probe as op; oled=op() — draw the dot as a filled circle on the 96×96 OLED too, scaled up so it\'s much bigger than on the LED matrix.'
 	]
 };
 

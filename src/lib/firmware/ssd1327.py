@@ -145,10 +145,48 @@ class OLED:
                         if bits&(1<<row):self.fill_rect(x+col*2,y+row*2,2,2,c)
             x+=12
 
-    @classmethod
-    def probe(cls,freq=400000):
-        try:
-            i2c.init(freq=freq)
-            if 0x3C in i2c.scan():return cls(0x3C)
-        except:pass
-        return None
+class SH1107(OLED):
+    def __init__(self,addr=0x3C):
+        self.addr=addr
+        self.buf=bytearray(128*128//8)
+        self._cb=bytearray([0x00,0x00])
+        self._db=bytearray(129)
+        self._db[0]=0x40
+        self._sh_init()
+
+    def _sh_init(self):
+        for c in(0xAE,0xA8,0x7F,0xD3,0x60,0xDC,0x00,0xA0,0xC8,0xA6,
+                 0xD5,0x51,0xD9,0x22,0xDA,0x12,0xDB,0x35,0x21,
+                 0x81,0x6F,0xAD,0x8A,0xA4,0xAF):
+            self._cmd(c)
+
+    def pixel(self,x,y,c):
+        if 0<=x<128 and 0<=y<128:
+            i=(y>>3)*128+x;b=1<<(y&7)
+            if c>=8:self.buf[i]|=b
+            else:self.buf[i]&=~b
+
+    def fill(self,c):
+        v=0xFF if c>=8 else 0x00
+        for i in range(len(self.buf)):self.buf[i]=v
+
+    def show(self):
+        for pg in range(16):
+            self._cmd(0xB0|pg,0x00,0x10)
+            self._db[1:129]=self.buf[pg*128:(pg+1)*128]
+            i2c.write(self.addr,memoryview(self._db)[:129])
+
+def probe(freq=400000):
+    try:
+        i2c.init(freq=freq)
+        if 0x3C not in i2c.scan():return None
+        o=OLED(0x3C)
+        o._cmd(0x15,_CS,_CS);o._cmd(0x75,0,0)
+        i2c.write(0x3C,b'\x40\xAA')
+        o._cmd(0x15,_CS,_CS);o._cmd(0x75,0,0)
+        try:rb=i2c.read(0x3C,1)[0]
+        except:rb=0
+        if rb==0xAA:return o
+        return SH1107(0x3C)
+    except:pass
+    return None

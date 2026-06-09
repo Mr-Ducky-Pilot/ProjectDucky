@@ -51,6 +51,7 @@
 				type: 'tone',
 				sequence: recording.map((n) => ({ note: n.name, ms: 250 }))
 			});
+			void connection.send({ type: 'oled-text', lines: ['Welcome Jingle', `${recording.length} notes`, 'Playing...'] }).catch(() => {});
 		} catch { /* not connected */ }
 
 		setTimeout(() => { playing = false; setMood('idle'); }, recording.length * 280 + 300);

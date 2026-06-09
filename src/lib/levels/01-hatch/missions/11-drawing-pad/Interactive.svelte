@@ -15,6 +15,7 @@
 			lastSent = bits.slice();
 			setMood('celebrating');
 			setTimeout(() => setMood('idle'), 800);
+			void connection.send({ type: 'oled-text', lines: ['Drawing Pad', 'Pattern beamed!'] }).catch(() => {});
 		} catch {
 			// not connected — will show silently
 		}

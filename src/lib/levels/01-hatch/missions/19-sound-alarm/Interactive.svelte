@@ -27,6 +27,7 @@
 
 		// Flash alarm pattern + play siren on board
 		void connection.send({ type: 'matrix', bits: alarmBits }).catch(() => {});
+		void connection.send({ type: 'oled-text', lines: ['ALARM!', 'Sound detected!'] }).catch(() => {});
 		void connection.send({
 			type: 'tone',
 			sequence: [
@@ -40,8 +41,10 @@
 			triggered = false;
 			if (armed) {
 				void connection.send({ type: 'face', name: 'happy' }).catch(() => {});
+				void connection.send({ type: 'oled-text', lines: ['ARMED', 'Shh... quiet!', 'Stay still!'] }).catch(() => {});
 			} else {
 				void connection.send({ type: 'matrix', bits: clearBits }).catch(() => {});
+				void connection.send({ type: 'oled-text', lines: ['Sound Alarm', 'Disarmed'] }).catch(() => {});
 			}
 			setMood('idle');
 			await new Promise((r) => setTimeout(r, 1500));
@@ -57,9 +60,11 @@
 			setMood('curious');
 			say('Shh… I\'m listening 👂', 'curious');
 			void connection.send({ type: 'face', name: 'wink' }).catch(() => {});
+			void connection.send({ type: 'oled-text', lines: ['ARMED', 'Shh... quiet!', 'Stay still!'] }).catch(() => {});
 		} else {
 			setMood('idle');
 			void connection.send({ type: 'matrix', bits: clearBits }).catch(() => {});
+			void connection.send({ type: 'oled-text', lines: ['Sound Alarm', 'Disarmed'] }).catch(() => {});
 		}
 	}
 

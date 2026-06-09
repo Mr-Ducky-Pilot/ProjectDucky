@@ -27,7 +27,7 @@
 
 from microbit import *
 import radio, music
-from ssd1327 import OLED
+from ssd1327 import probe as _oled_probe
 
 uart.init(baudrate=115200)
 
@@ -484,7 +484,7 @@ radio.config(channel=42, group=42)
 radio.on()
 
 # Probe for Grove OLED 1.12" (also bumps I2C to 400 kHz)
-oled = OLED.probe()
+oled = _oled_probe()
 
 display.show(FACES['duck'])
 if oled:
