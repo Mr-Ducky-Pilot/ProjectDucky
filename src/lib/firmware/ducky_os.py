@@ -26,7 +26,7 @@
 #   Play:  runs preset; logo held ≥1.5s = back to Menu
 
 from microbit import *
-import radio, music
+import radio, music, math
 from ssd1327 import probe as _oled_probe
 
 uart.init(baudrate=115200)
@@ -65,6 +65,7 @@ NOTE_FREQ = {
 PRESET_LIST = (
     'heartbeat', 'tap-wake', 'shake', 'hide-peek',
     'whisper', 'touch-logo', 'compass-quest',
+    'sky-radar', 'iss-orbit',
 )
 MENU_ICONS = {
     'heartbeat':     Image("09090:09090:09990:00900:00000"),   # heart outline
@@ -74,6 +75,8 @@ MENU_ICONS = {
     'whisper':       Image("00900:09990:99999:09990:00900"),   # sound burst
     'touch-logo':    Image("09900:99990:99999:09990:00000"),   # duck
     'compass-quest': Image("00900:09990:90909:00900:00900"),   # N arrow
+    'sky-radar':     Image("00900:09090:90009:09090:00900"),   # radar circle
+    'iss-orbit':     Image("00900:09000:90009:00090:00900"),   # tilted orbit
 }
 
 # Precomputed integer compass spoke vectors for 8 directions (24px radius)
@@ -268,6 +271,28 @@ def handle(line):
                 if rest == 'clear':
                     oled.fill(0)
                     oled.show()
+                elif rest.startswith('radar:'):
+                    # O:radar:count;dx1,dy1;dx2,dy2;...
+                    # dx,dy are pixel offsets from centre (48,44), range -40..+40
+                    parts = rest[6:].split(';')
+                    count = parts[0] if parts else '0'
+                    cx, cy, r = 48, 44, 38
+                    oled.fill(0)
+                    oled.circle(cx, cy, r, 5)
+                    oled.circle(cx, cy, r * 2 // 3, 3)
+                    oled.circle(cx, cy, r // 3, 1)
+                    oled.fill_circle(cx, cy, 3, 10)   # airport centre
+                    for blip in parts[1:20]:
+                        try:
+                            dx, dy = blip.split(',')
+                            bx = cx + int(dx)
+                            by = cy + int(dy)
+                            if 0 < bx < 96 and 0 < by < 96:
+                                oled.fill_circle(bx, by, 2, 15)
+                        except:
+                            pass
+                    oled.text(count + ' planes', 4, 84, 10)
+                    oled.show()
                 else:
                     lines = rest.split('|')
                     oled.fill(0)
@@ -459,6 +484,96 @@ def tick():
 
     elif preset == 'wave-across':
         pass   # button + radio handlers below do the work
+
+    elif preset == 'sky-radar':
+        if n - state.get('t', 0) > 50:
+            state['t'] = n
+            angle = (state.get('angle', 0) + 4) % 360
+            state['angle'] = angle
+            display.show(ARROWS[int(angle / 45) % 8])
+        if oled and n - state.get('ot', 0) > 60:
+            state['ot'] = n
+            angle = state.get('angle', 0)
+            cx, cy, r = 48, 44, 36
+            oled.fill(0)
+            oled.circle(cx, cy, r, 5)
+            oled.circle(cx, cy, r * 2 // 3, 3)
+            oled.circle(cx, cy, r // 3, 1)
+            oled.fill_circle(cx, cy, 3, 10)
+            try:
+                rad = angle * math.pi / 180
+                ex = cx + int(r * math.sin(rad))
+                ey = cy - int(r * math.cos(rad))
+                oled.line(cx, cy, ex, ey, 12)
+                # Sweep glow (two faint trailing lines)
+                for trail in [15, 30]:
+                    ta = ((angle - trail) + 360) % 360
+                    tr = ta * math.pi / 180
+                    tex = cx + int(r * math.sin(tr))
+                    tey = cy - int(r * math.cos(tr))
+                    oled.line(cx, cy, tex, tey, 3)
+                # Simulated blips — 5 fixed positions that ping as sweep passes
+                BLIP_ANGLES = [40, 115, 200, 280, 320]
+                BLIP_RADII  = [20, 28,  16,  32,  24]
+                for ba, br in zip(BLIP_ANGLES, BLIP_RADII):
+                    age = (angle - ba + 360) % 360
+                    if age < 45:
+                        br2 = max(2, int(12 * (1 - age / 45)))
+                        bx = cx + int(br * math.sin(ba * math.pi / 180))
+                        by = cy - int(br * math.cos(ba * math.pi / 180))
+                        oled.fill_circle(bx, by, 2, br2)
+            except:
+                pass
+            oled.text('Sky Radar', 18, 84, 6)
+            oled.show()
+
+    elif preset == 'iss-orbit':
+        if n - state.get('t', 0) > 80:
+            state['t'] = n
+            angle = (state.get('angle', 0) + 2) % 360
+            state['angle'] = angle
+            # LED matrix: star blinking
+            if (angle // 45) % 2 == 0:
+                display.show(Image("00900:09090:99999:09090:00900"))
+            else:
+                display.show(Image("00000:00900:09990:00900:00000"))
+        if oled and n - state.get('ot', 0) > 80:
+            state['ot'] = n
+            angle = state.get('angle', 0)
+            cx, cy = 48, 48
+            oled.fill(0)
+            oled.text('ISS Orbit', 18, 1, 10)
+            # Earth
+            oled.fill_circle(cx, cy, 16, 5)
+            oled.circle(cx, cy, 16, 8)
+            # Orbital ellipse (ISS inclination ≈ 51.6°)
+            ea, eb, tilt = 36, 20, 0.9
+            try:
+                prev_x, prev_y = None, None
+                for step in range(37):
+                    t2 = step * 10 * math.pi / 180
+                    x0 = ea * math.cos(t2)
+                    y0 = eb * math.sin(t2)
+                    x1 = x0 * math.cos(tilt) - y0 * math.sin(tilt)
+                    y1 = x0 * math.sin(tilt) + y0 * math.cos(tilt)
+                    sx = cx + int(x1)
+                    sy = cy + int(y1)
+                    if prev_x is not None:
+                        oled.line(prev_x, prev_y, sx, sy, 4)
+                    prev_x, prev_y = sx, sy
+                # ISS position on orbit
+                t2 = angle * math.pi / 180
+                x0 = ea * math.cos(t2)
+                y0 = eb * math.sin(t2)
+                x1 = x0 * math.cos(tilt) - y0 * math.sin(tilt)
+                y1 = x0 * math.sin(tilt) + y0 * math.cos(tilt)
+                iss_x = cx + int(x1)
+                iss_y = cy + int(y1)
+                oled.fill_circle(iss_x, iss_y, 4, 15)
+            except:
+                pass
+            oled.text('Simulated', 14, 87, 4)
+            oled.show()
 
     elif preset == 'touch-logo':
         if n - state.get('t', 0) > 1000:

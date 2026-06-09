@@ -1,5 +1,6 @@
 <script lang="ts">
 	import LedMatrix from '$lib/components/LedMatrix.svelte';
+	import YourTurn from '$lib/components/YourTurn.svelte';
 	import { connection } from '$lib/stores/connection';
 	import { onMount } from 'svelte';
 
@@ -113,4 +114,10 @@
 			<div class="font-mono text-2xl font-extrabold text-(--color-leaf-deep)">{bestMs ?? '—'} {bestMs ? 'ms' : ''}</div>
 		</div>
 	</div>
+
+	<YourTurn challenges={[
+		'Get your reaction time under 350 milliseconds — keep trying!',
+		'Beat 280ms — that\'s roughly the average for a 12-year-old.',
+		'Play 5 rounds without a single "too early" jump — patience wins!'
+	]} />
 </div>

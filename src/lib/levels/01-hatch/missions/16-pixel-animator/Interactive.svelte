@@ -1,6 +1,7 @@
 <script lang="ts">
 	import DrawingPad from '$lib/components/DrawingPad.svelte';
 	import LedMatrix from '$lib/components/LedMatrix.svelte';
+	import YourTurn from '$lib/components/YourTurn.svelte';
 	import { connection } from '$lib/stores/connection';
 	import { setMood } from '$lib/stores/ducky';
 
@@ -138,4 +139,10 @@
 			</button>
 		{/each}
 	</div>
+
+	<YourTurn challenges={[
+		'Animate a bouncing ball: single dot at the top in frame 1, middle in frame 2, bottom in frame 3.',
+		'Make a "winking face" — 3 frames where an eye closes then opens again.',
+		'Set the delay to 150ms and play — does it feel like smooth motion?'
+	]} />
 </div>

@@ -42,6 +42,7 @@ export type OutgoingCommand =
 	| { type: 'radio-send'; payload: number }
 	| { type: 'oled-text'; lines: string[] /* 1–4 lines, joined by | on the wire */ }
 	| { type: 'oled-clear' }
+	| { type: 'oled-radar'; planeCount: number; blips: Array<{ dx: number; dy: number }> }
 	| { type: 'quit' };
 
 export type IncomingEvent =
@@ -75,6 +76,8 @@ export function encode(cmd: OutgoingCommand): string {
 			return 'O:' + cmd.lines.join('|') + '\n';
 		case 'oled-clear':
 			return 'O:clear\n';
+		case 'oled-radar':
+			return 'O:radar:' + cmd.planeCount + ';' + cmd.blips.map((b) => `${b.dx},${b.dy}`).join(';') + '\n';
 		case 'quit':
 			return 'Q\n';
 	}

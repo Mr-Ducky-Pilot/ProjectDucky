@@ -1,7 +1,8 @@
 <script lang="ts">
 	type LineSegment =
 		| { kind: 'code'; text: string }
-		| { kind: 'gap'; index: number; placeholder: string };
+		| { kind: 'gap'; index: number; placeholder: string }
+		| { kind: 'gap-ml'; index: number; placeholder: string };
 
 	type Props = {
 		template: string;
@@ -11,16 +12,23 @@
 
 	let { template, code = $bindable(''), allFilled = $bindable(false) }: Props = $props();
 
+	// Match ___ml(hint) first so it takes priority over ___(hint)
+	const GAP_RE = /___ml\(([^)]*)\)|___\(([^)]*)\)|___/g;
+
 	function parseTemplate(tmpl: string): { lines: LineSegment[][]; gapCount: number } {
 		const segments: LineSegment[] = [];
 		let gapIdx = 0;
-		const regex = /___(?:\(([^)]*)\))?/g;
+		const regex = new RegExp(GAP_RE.source, 'g');
 		let last = 0;
 		let m: RegExpExecArray | null;
 
 		while ((m = regex.exec(tmpl)) !== null) {
 			if (m.index > last) segments.push({ kind: 'code', text: tmpl.slice(last, m.index) });
-			segments.push({ kind: 'gap', index: gapIdx++, placeholder: m[1] ?? '' });
+			if (m[0].startsWith('___ml')) {
+				segments.push({ kind: 'gap-ml', index: gapIdx++, placeholder: m[1] ?? '' });
+			} else {
+				segments.push({ kind: 'gap', index: gapIdx++, placeholder: m[2] ?? '' });
+			}
 			last = regex.lastIndex;
 		}
 		if (last < tmpl.length) segments.push({ kind: 'code', text: tmpl.slice(last) });
@@ -47,13 +55,41 @@
 		return { lines, gapCount: gapIdx };
 	}
 
+	// Compute leading whitespace for each ml gap so assembly can re-indent
+	function computeMlIndents(tmpl: string): Record<number, string> {
+		const result: Record<number, string> = {};
+		const regex = new RegExp(GAP_RE.source, 'g');
+		let gapIdx = 0;
+		let m: RegExpExecArray | null;
+		while ((m = regex.exec(tmpl)) !== null) {
+			if (m[0].startsWith('___ml')) {
+				const lineStart = tmpl.lastIndexOf('\n', m.index) + 1;
+				const before = tmpl.slice(lineStart, m.index);
+				result[gapIdx] = before.match(/^(\s*)/)?.[1] ?? '';
+			}
+			gapIdx++;
+		}
+		return result;
+	}
+
 	const { lines, gapCount } = parseTemplate(template);
+	const mlIndents = computeMlIndents(template);
 	let values = $state(new Array(gapCount).fill(''));
 
 	const assembled = $derived.by(() => {
-		const regex = /___(?:\(([^)]*)\))?/g;
+		const regex = new RegExp(GAP_RE.source, 'g');
 		let i = 0;
-		return template.replace(regex, () => values[i++] || '___');
+		return template.replace(regex, (match) => {
+			const idx = i++;
+			const val = values[idx];
+			if (match.startsWith('___ml')) {
+				if (!val) return match;
+				const indent = mlIndents[idx] ?? '';
+				// First line keeps the template's leading indent; subsequent lines get it prepended
+				return val.split('\n').join('\n' + indent);
+			}
+			return val || match;
+		});
 	});
 
 	$effect(() => {
@@ -62,6 +98,11 @@
 	});
 
 	const blanksLeft = $derived(values.filter((v) => !v.trim()).length);
+
+	function autoResize(el: HTMLTextAreaElement) {
+		el.style.height = 'auto';
+		el.style.height = el.scrollHeight + 'px';
+	}
 </script>
 
 <div class="overflow-hidden rounded-2xl bg-(--color-night-ink) font-mono text-sm leading-relaxed shadow-lg">
@@ -88,20 +129,47 @@
 	<!-- Code body -->
 	<div class="overflow-x-auto p-5">
 		{#each lines as line}
-			<div class="flex min-h-[1.6rem] items-center">
-				{#each line as seg}
-					{#if seg.kind === 'code'}
-						<span class="whitespace-pre text-[#c9d1d9]">{seg.text}</span>
-					{:else}
-						<input
-							class="mx-0.5 inline-block min-w-[3ch] rounded-md bg-(--color-duck-yellow) px-1.5 py-0.5 font-mono text-sm font-bold text-(--color-night-ink) outline-none transition focus:ring-2 focus:ring-(--color-duck-yellow)/60 focus:ring-offset-1 focus:ring-offset-(--color-night-ink)"
-							style="width: {Math.max(3, (seg.placeholder.length || 1) + 1)}ch;"
-							placeholder={seg.placeholder || '?'}
-							bind:value={values[seg.index]}
-						/>
-					{/if}
-				{/each}
-			</div>
+			{#if line.some((s) => s.kind === 'gap-ml')}
+				<!-- Block line containing a multi-line gap -->
+				<div class="my-1.5">
+					{#each line as seg}
+						{#if seg.kind === 'code'}
+							<span class="whitespace-pre text-[#c9d1d9]">{seg.text}</span>
+						{:else if seg.kind === 'gap'}
+							<input
+								class="mx-0.5 inline-block min-w-[3ch] rounded-md bg-(--color-duck-yellow) px-1.5 py-0.5 font-mono text-sm font-bold text-(--color-night-ink) outline-none transition focus:ring-2 focus:ring-(--color-duck-yellow)/60 focus:ring-offset-1 focus:ring-offset-(--color-night-ink)"
+								style="width: {Math.max(3, (seg.placeholder.length || 1) + 1)}ch;"
+								placeholder={seg.placeholder || '?'}
+								bind:value={values[seg.index]}
+							/>
+						{:else if seg.kind === 'gap-ml'}
+							<textarea
+								class="mt-1.5 block w-full resize-none rounded-lg border-2 border-(--color-duck-yellow)/50 bg-(--color-duck-yellow)/8 px-3 py-2 font-mono text-sm text-(--color-duck-yellow) outline-none transition placeholder-[#c9d1d9]/30 focus:border-(--color-duck-yellow) focus:bg-(--color-duck-yellow)/12"
+								placeholder={seg.placeholder || 'write your code here…'}
+								rows={3}
+								bind:value={values[seg.index]}
+								oninput={(e) => autoResize(e.currentTarget)}
+							></textarea>
+						{/if}
+					{/each}
+				</div>
+			{:else}
+				<!-- Normal inline line -->
+				<div class="flex min-h-[1.6rem] items-center">
+					{#each line as seg}
+						{#if seg.kind === 'code'}
+							<span class="whitespace-pre text-[#c9d1d9]">{seg.text}</span>
+						{:else}
+							<input
+								class="mx-0.5 inline-block min-w-[3ch] rounded-md bg-(--color-duck-yellow) px-1.5 py-0.5 font-mono text-sm font-bold text-(--color-night-ink) outline-none transition focus:ring-2 focus:ring-(--color-duck-yellow)/60 focus:ring-offset-1 focus:ring-offset-(--color-night-ink)"
+								style="width: {Math.max(3, (seg.placeholder.length || 1) + 1)}ch;"
+								placeholder={seg.placeholder || '?'}
+								bind:value={values[seg.index]}
+							/>
+						{/if}
+					{/each}
+				</div>
+			{/if}
 		{/each}
 	</div>
 </div>

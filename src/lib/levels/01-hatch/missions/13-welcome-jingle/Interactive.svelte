@@ -1,5 +1,6 @@
 <script lang="ts">
 	import PianoKeys from '$lib/components/PianoKeys.svelte';
+	import YourTurn from '$lib/components/YourTurn.svelte';
 	import { connection } from '$lib/stores/connection';
 	import { setMood } from '$lib/stores/ducky';
 
@@ -105,4 +106,10 @@
 		<p class="mb-1 text-xs font-extrabold tracking-widest text-(--color-pond-deep) uppercase">Starter melody</p>
 		<p class="text-sm text-(--color-night-soft)">Twinkle: <span class="font-mono">C C G G A A G · F F E E D D C</span></p>
 	</div>
+
+	<YourTurn challenges={[
+		'Tap out the first 7 notes of Twinkle Twinkle (C C G G A A G) and play it on Ducky.',
+		'Record at least 8 notes and make them sound like a tune you recognise.',
+		'Make a jingle that starts and ends on the same note — does it feel "complete"?'
+	]} />
 </div>

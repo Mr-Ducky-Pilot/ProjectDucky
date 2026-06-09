@@ -1,5 +1,6 @@
 <script lang="ts">
 	import LedMatrix from '$lib/components/LedMatrix.svelte';
+	import YourTurn from '$lib/components/YourTurn.svelte';
 	import { connection } from '$lib/stores/connection';
 	import { onMount } from 'svelte';
 
@@ -175,4 +176,10 @@
 			</button>
 		{/each}
 	</div>
+
+	<YourTurn challenges={[
+		'Tap the BPM button along to a song you know — what BPM is it?',
+		'Set to 120 BPM (march tempo) and clap in time for 30 seconds without losing the beat.',
+		'Try 180 BPM — that\'s dance music speed! Can you clap every single beat?'
+	]} />
 </div>

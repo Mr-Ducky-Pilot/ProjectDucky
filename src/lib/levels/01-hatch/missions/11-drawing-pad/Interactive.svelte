@@ -1,6 +1,7 @@
 <script lang="ts">
 	import DrawingPad from '$lib/components/DrawingPad.svelte';
 	import LedMatrix from '$lib/components/LedMatrix.svelte';
+	import YourTurn from '$lib/components/YourTurn.svelte';
 	import { connection } from '$lib/stores/connection';
 	import { setMood } from '$lib/stores/ducky';
 
@@ -62,4 +63,10 @@
 			✅ Drawing beamed! Look at the real chip — does it match?
 		</div>
 	{/if}
+
+	<YourTurn challenges={[
+		'Draw a heart shape using at least 8 pixels and beam it to your micro:bit.',
+		'Try to draw the letter D — a tall column on the left, curved pixels curving right.',
+		'Create a pattern with exactly 13 lit pixels and make it look like something real.'
+	]} />
 </div>

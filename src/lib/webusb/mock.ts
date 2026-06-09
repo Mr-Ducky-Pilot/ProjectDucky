@@ -92,6 +92,9 @@ export function createMockAdapter(): DeviceAdapter {
 			if (command.type === 'oled-clear') {
 				emit({ type: 'log', text: 'OLED: cleared' });
 			}
+			if (command.type === 'oled-radar') {
+				emit({ type: 'log', text: `OLED radar: ${command.planeCount} planes, ${command.blips.length} blips` });
+			}
 			if (command.type === 'subscribe') {
 				subs.add(command.sensor);
 				startStream(command.sensor);

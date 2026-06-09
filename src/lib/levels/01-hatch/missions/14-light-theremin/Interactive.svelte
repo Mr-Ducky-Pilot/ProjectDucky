@@ -1,5 +1,6 @@
 <script lang="ts">
 	import SensorMeter from '$lib/components/SensorMeter.svelte';
+	import YourTurn from '$lib/components/YourTurn.svelte';
 	import { connection } from '$lib/stores/connection';
 	import { onMount } from 'svelte';
 
@@ -132,4 +133,10 @@
 			Start Ducky first — then hover your hand over the chip and move it slowly.
 		</p>
 	{/if}
+
+	<YourTurn challenges={[
+		'Switch to the major scale and slowly move your hand to play 3 different notes in a row.',
+		'Find note G4 and hold it steady for 3 seconds by covering the chip just the right amount.',
+		'Switch to the spooky scale and improvise — can you make it sound like a ghost?'
+	]} />
 </div>

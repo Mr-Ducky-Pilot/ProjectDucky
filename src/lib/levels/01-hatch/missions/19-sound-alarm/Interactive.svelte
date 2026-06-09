@@ -1,6 +1,7 @@
 <script lang="ts">
 	import SensorMeter from '$lib/components/SensorMeter.svelte';
 	import LedMatrix from '$lib/components/LedMatrix.svelte';
+	import YourTurn from '$lib/components/YourTurn.svelte';
 	import { connection } from '$lib/stores/connection';
 	import { setMood, say } from '$lib/stores/ducky';
 	import { onMount } from 'svelte';
@@ -151,4 +152,10 @@
 			{/if}
 		</div>
 	</div>
+
+	<YourTurn challenges={[
+		'Find the sensitivity sweet spot: talking doesn\'t trigger it, but a single clap does.',
+		'Set it up as a desk guard and trigger the alarm 3 times by clapping — reset between each.',
+		'Arm it for 30 seconds without any false triggers — can you keep the room quiet enough?'
+	]} />
 </div>

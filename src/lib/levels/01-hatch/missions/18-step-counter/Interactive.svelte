@@ -1,6 +1,7 @@
 <script lang="ts">
 	import LedMatrix from '$lib/components/LedMatrix.svelte';
 	import SensorMeter from '$lib/components/SensorMeter.svelte';
+	import YourTurn from '$lib/components/YourTurn.svelte';
 	import { connection } from '$lib/stores/connection';
 	import { setMood } from '$lib/stores/ducky';
 	import { onMount } from 'svelte';
@@ -146,4 +147,10 @@
 			{/if}
 		</div>
 	</div>
+
+	<YourTurn challenges={[
+		'Set goal to 10, then walk exactly 10 steps — does the counter match?',
+		'Adjust the threshold until desk bumps and arm swings don\'t count as steps.',
+		'Set goal to 20 and walk around the room — hit your target!'
+	]} />
 </div>

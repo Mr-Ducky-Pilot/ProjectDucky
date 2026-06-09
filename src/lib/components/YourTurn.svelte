@@ -44,7 +44,7 @@
 				<span
 					class="text-sm leading-relaxed"
 					class:line-through={checked[i]}
-					class:text-\(--color-night-soft\)={checked[i]}
+					style={checked[i] ? 'color: var(--color-night-soft)' : ''}
 				>{challenge}</span>
 			</li>
 		{/each}

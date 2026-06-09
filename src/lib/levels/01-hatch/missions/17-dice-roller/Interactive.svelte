@@ -1,5 +1,6 @@
 <script lang="ts">
 	import LedMatrix from '$lib/components/LedMatrix.svelte';
+	import YourTurn from '$lib/components/YourTurn.svelte';
 	import { connection } from '$lib/stores/connection';
 	import { setMood } from '$lib/stores/ducky';
 	import { onMount } from 'svelte';
@@ -135,4 +136,10 @@
 			{/if}
 		</div>
 	</div>
+
+	<YourTurn challenges={[
+		'Roll until you\'ve seen every number from 1 to 6 at least once — how many rolls did it take?',
+		'Try to roll the same number three times in a row — it\'s rare! Count your attempts.',
+		'Roll 12 times and tally the results — did each number appear roughly twice? Is it fair?'
+	]} />
 </div>

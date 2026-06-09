@@ -35,19 +35,19 @@ export const LEVELS: readonly LevelInfo[] = [
 		id: 2,
 		emoji: '🐥',
 		title: 'Waddle',
-		blurb: 'Snap blocks together to build something only you would build.',
+		blurb: 'Fill in the blanks. Flash your code. Watch it run on the chip.',
 		color: '#ffd23a',
-		available: false,
-		tagline: 'Open the editor. Coming soon.'
+		available: true,
+		tagline: 'Real MicroPython, real chip.'
 	},
 	{
 		id: 3,
 		emoji: '🦆',
 		title: 'Swim',
-		blurb: 'Two ducks, one experience. Pair up with a friend.',
+		blurb: 'Write the functions. Flash two boards. Build apps that talk to each other.',
 		color: '#4cc1ff',
-		available: false,
-		tagline: 'Walkie-talkies, secret handshakes.'
+		available: true,
+		tagline: 'Functions, radio, real games.'
 	},
 	{
 		id: 4,
