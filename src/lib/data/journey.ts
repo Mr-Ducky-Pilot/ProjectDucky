@@ -53,18 +53,18 @@ export const LEVELS: readonly LevelInfo[] = [
 		id: 4,
 		emoji: '🪶',
 		title: 'Feather',
-		blurb: 'See the code behind the blocks. The big reveal.',
+		blurb: 'Program your duck\'s personality — greetings, moods, tricks, dream mode.',
 		color: '#7ad44b',
-		available: false,
-		tagline: 'It was code all along.'
+		available: true,
+		tagline: 'Make your pet truly yours.'
 	},
 	{
 		id: 5,
 		emoji: '🌟',
 		title: 'Soar',
-		blurb: 'No missions, no rules. Just you and the sandbox.',
+		blurb: 'Open MicroPython. Build whatever. Share .duck files with friends.',
 		color: '#ff7a6b',
-		available: false,
-		tagline: 'You don’t need me anymore.'
+		available: true,
+		tagline: 'You don\'t need me anymore.'
 	}
 ] as const;

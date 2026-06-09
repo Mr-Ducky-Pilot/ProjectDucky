@@ -11,6 +11,7 @@ const meta: MissionMeta = {
 	duckyIntro: 'Tap notes to make a tune. Then hit Play and I’ll perform.',
 	hardware: ['speaker'],
 	pairMode: false,
+	dimension: 'music',
 	estMinutes: 6,
 	remixPrompts: [
 		'Try Twinkle Twinkle: C C G G A A G',

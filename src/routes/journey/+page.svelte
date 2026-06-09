@@ -1,9 +1,26 @@
 <script lang="ts">
-	import Ducky from '$lib/components/Ducky.svelte';
 	import SpeechBubble from '$lib/components/SpeechBubble.svelte';
-	import JourneyEgg from '$lib/components/JourneyEgg.svelte';
-	import { LEVELS } from '$lib/data/journey';
+	import JourneyPath from '$lib/components/JourneyPath.svelte';
+	import PetAvatar from '$lib/components/PetAvatar.svelte';
+	import { pet, isNamed } from '$lib/stores/pet';
+	import { DIMENSION_LABEL, DIMENSION_COLOR, DIMENSION_EMOJI, type Dimension } from '$lib/missions/types';
+	import { ALL_MISSIONS } from '$lib/missions/registry';
+	import { progress } from '$lib/stores/progress';
 	import dialogue from '$lib/data/dialogue.json';
+
+	const dims: Dimension[] = ['art', 'music', 'science', 'wellbeing', 'movement', 'story', 'pet', 'mechanics'];
+
+	const dimensionCounts = $derived.by(() => {
+		const out: Record<Dimension, { total: number; done: number }> = Object.fromEntries(
+			dims.map((d) => [d, { total: 0, done: 0 }])
+		) as Record<Dimension, { total: number; done: number }>;
+		for (const m of ALL_MISSIONS) {
+			const d = (m.dimension ?? 'mechanics') as Dimension;
+			out[d].total += 1;
+			if ($progress.completed.includes(`${m.level}/${m.id}`)) out[d].done += 1;
+		}
+		return out;
+	});
 </script>
 
 <section class="px-5 py-8 sm:py-12">
@@ -18,22 +35,45 @@
 			</div>
 		</header>
 
-		<div class="mt-8 flex flex-col gap-4">
-			{#each LEVELS as level, i}
-				<JourneyEgg
-					emoji={level.emoji}
-					title={level.title}
-					blurb={level.tagline}
-					color={level.color}
-					href={level.available ? `/level/${level.id}` : '/journey'}
-					locked={!level.available}
-					index={i}
-				/>
-			{/each}
+		<!-- Pet introduction card -->
+		<a
+			href="/pet"
+			class="mt-6 flex items-center gap-4 rounded-3xl bg-egg-cream p-4 shadow-soft transition hover:-translate-y-0.5 hover:bg-white"
+		>
+			<PetAvatar size={84} mood={isNamed($pet) ? 'excited' : 'curious'} />
+			<div>
+				{#if isNamed($pet)}
+					<p class="text-xs font-bold uppercase tracking-widest text-(--color-night-soft)">Your duck</p>
+					<p class="font-display text-xl font-extrabold text-night-ink">{$pet.name}</p>
+					<p class="text-sm text-(--color-night-soft)">
+						{$pet.friends.length} friend{$pet.friends.length === 1 ? '' : 's'} ·
+						{$pet.unlocks.levelsCompleted.length} level{$pet.unlocks.levelsCompleted.length === 1 ? '' : 's'} done
+					</p>
+				{:else}
+					<p class="text-xs font-bold uppercase tracking-widest text-(--color-night-soft)">No name yet</p>
+					<p class="font-display text-xl font-extrabold text-night-ink">Adopt your duck →</p>
+					<p class="text-sm text-(--color-night-soft)">Reach Level 3 to name it.</p>
+				{/if}
+			</div>
+		</a>
+
+		<div class="mt-8">
+			<JourneyPath />
 		</div>
 
-		<div class="mt-12 flex justify-center">
-			<Ducky mood="curious" size={120} />
+		<div class="mt-12">
+			<h2 class="mb-3 font-display text-lg font-bold text-night-ink">What have you explored?</h2>
+			<div class="flex flex-wrap gap-2">
+				{#each dims as d}
+					{@const c = dimensionCounts[d]}
+					<span
+						class="rounded-full px-3 py-1.5 text-xs font-semibold"
+						style="background: {DIMENSION_COLOR[d]}26; color: {DIMENSION_COLOR[d]};"
+					>
+						{DIMENSION_EMOJI[d]} {DIMENSION_LABEL[d]} · {c.done}/{c.total}
+					</span>
+				{/each}
+			</div>
 		</div>
 	</div>
 </section>

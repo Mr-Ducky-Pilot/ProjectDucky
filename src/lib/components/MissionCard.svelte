@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { Mission } from '$lib/missions/types';
+	import { DIMENSION_COLOR, DIMENSION_LABEL, DIMENSION_EMOJI } from '$lib/missions/types';
 	import { progress, isCompleted } from '$lib/stores/progress';
 
 	type Props = {
@@ -8,6 +9,7 @@
 
 	let { mission }: Props = $props();
 	const done = $derived(isCompleted($progress, mission.level, mission.id));
+	const dim = $derived(mission.dimension ?? 'mechanics');
 </script>
 
 <a
@@ -21,6 +23,13 @@
 		<div class="flex items-center gap-1.5 text-xs">
 			<span class="rounded-full bg-(--color-mist) px-2 py-0.5 font-bold text-(--color-night-soft)">
 				#{mission.order.toString().padStart(2, '0')}
+			</span>
+			<span
+				class="rounded-full px-2 py-0.5 font-semibold"
+				style="background: {DIMENSION_COLOR[dim]}26; color: {DIMENSION_COLOR[dim]};"
+				title={DIMENSION_LABEL[dim]}
+			>
+				{DIMENSION_EMOJI[dim]}
 			</span>
 			{#if mission.pairMode}
 				<span

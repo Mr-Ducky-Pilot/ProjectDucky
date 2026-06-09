@@ -12,6 +12,7 @@ const meta: MissionMeta = {
 	hardware: ['accel', 'speaker', 'led-matrix'],
 	pairMode: false,
 	preset: 'shake',
+	dimension: 'movement',
 	estMinutes: 2,
 	remixPrompts: ['Try really gentle shakes vs really hard ones.', 'Can you balance Ducky perfectly still?']
 };

@@ -11,6 +11,7 @@ const meta: MissionMeta = {
 	duckyIntro: "There's a space station up there RIGHT NOW with astronauts inside! Let's find it!",
 	hardware: ['oled', 'led-matrix'],
 	pairMode: false,
+	dimension: 'science',
 	estMinutes: 8,
 	remixPrompts: [
 		'When will the ISS fly over your town? Look up the next pass at heavens-above.com.',

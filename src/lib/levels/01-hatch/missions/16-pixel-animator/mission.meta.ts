@@ -11,6 +11,7 @@ const meta: MissionMeta = {
 	duckyIntro: 'Draw your three frames. Even a tiny change between each one looks like movement!',
 	hardware: ['led-matrix'],
 	pairMode: false,
+	dimension: 'art',
 	estMinutes: 8,
 	remixPrompts: [
 		'Make a heartbeat: tiny heart → big heart → tiny heart.',

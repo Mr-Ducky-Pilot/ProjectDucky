@@ -11,6 +11,7 @@ const meta: MissionMeta = {
 	duckyIntro: 'A proper gadget — you write it, you flash it, it works!',
 	hardware: ['light', 'led-matrix', 'speaker'],
 	pairMode: false,
+	dimension: 'science',
 	estMinutes: 12,
 	remixPrompts: [
 		'Try different tunes: ENTERTAINER, NYAN, or ODE.',

@@ -11,6 +11,7 @@ const meta: MissionMeta = {
 	duckyIntro: "Did you know there are thousands of planes in the air right now? Let's track them!",
 	hardware: ['oled', 'led-matrix'],
 	pairMode: false,
+	dimension: 'science',
 	estMinutes: 10,
 	remixPrompts: [
 		'Filter to only show planes above 30,000 ft — how many are cruising versus landing?',

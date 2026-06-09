@@ -12,6 +12,7 @@ const meta: MissionMeta = {
 	hardware: ['logo-touch', 'speaker'],
 	pairMode: false,
 	preset: 'touch-logo',
+	dimension: 'music',
 	estMinutes: 2,
 	remixPrompts: [
 		'Try it with sticky tape on the logo. Does it still work?',

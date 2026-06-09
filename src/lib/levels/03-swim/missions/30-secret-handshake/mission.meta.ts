@@ -11,6 +11,7 @@ const meta: MissionMeta = {
 	duckyIntro: 'Pick your secret. Write the match check. Find your duck.',
 	hardware: ['buttons', 'led-matrix', 'speaker', 'radio'],
 	pairMode: true,
+	dimension: 'story',
 	estMinutes: 15,
 	remixPrompts: [
 		'Track how many attempts it took to match — display.scroll(str(attempts)) at the end.',

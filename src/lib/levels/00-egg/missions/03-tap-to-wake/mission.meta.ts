@@ -12,6 +12,7 @@ const meta: MissionMeta = {
 	hardware: ['buttons', 'led-matrix'],
 	pairMode: false,
 	preset: 'tap-wake',
+	dimension: 'mechanics',
 	estMinutes: 2,
 	remixPrompts: ['Tap A and B together — what happens?', 'Try really fast tapping.']
 };

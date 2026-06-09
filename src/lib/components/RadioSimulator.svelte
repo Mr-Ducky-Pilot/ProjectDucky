@@ -2,7 +2,7 @@
 	import { onMount } from 'svelte';
 	import { connection } from '$lib/stores/connection';
 
-	type LogEntry = { dir: 'sent' | 'recv'; payload: number; ts: number };
+	type LogEntry = { dir: 'sent' | 'recv'; payload: number | string; ts: number };
 
 	let payload = $state(99);
 	let log = $state<LogEntry[]>([]);

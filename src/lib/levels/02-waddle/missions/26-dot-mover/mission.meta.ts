@@ -11,6 +11,7 @@ const meta: MissionMeta = {
 	duckyIntro: "Set the starting point and the edge — let's write your first game!",
 	hardware: ['buttons', 'led-matrix'],
 	pairMode: false,
+	dimension: 'mechanics',
 	estMinutes: 15,
 	remixPrompts: [
 		'Change the starting y position to move the dot to a different row.',

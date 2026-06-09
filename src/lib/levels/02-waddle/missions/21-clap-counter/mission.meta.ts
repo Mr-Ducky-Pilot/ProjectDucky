@@ -11,6 +11,7 @@ const meta: MissionMeta = {
 	duckyIntro: 'Three blanks, one mission: fill them in and watch the counter go!',
 	hardware: ['mic', 'led-matrix'],
 	pairMode: false,
+	dimension: 'mechanics',
 	estMinutes: 10,
 	remixPrompts: [
 		'Change the threshold so it only counts shouts, not claps.',

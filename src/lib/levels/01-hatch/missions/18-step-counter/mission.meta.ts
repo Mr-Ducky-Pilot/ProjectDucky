@@ -11,6 +11,7 @@ const meta: MissionMeta = {
 	duckyIntro: "Walk around with me! Every step sends a tiny jolt that I'll count.",
 	hardware: ['accel', 'led-matrix'],
 	pairMode: false,
+	dimension: 'movement',
 	estMinutes: 6,
 	remixPrompts: [
 		'Try counting jumps instead — the spike will be much bigger.',

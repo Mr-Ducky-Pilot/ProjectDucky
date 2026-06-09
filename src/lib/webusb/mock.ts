@@ -95,6 +95,12 @@ export function createMockAdapter(): DeviceAdapter {
 			if (command.type === 'oled-radar') {
 				emit({ type: 'log', text: `OLED radar: ${command.planeCount} planes, ${command.blips.length} blips` });
 			}
+			if (command.type === 'oled-pixels') {
+				emit({ type: 'log', text: `OLED pixels: ${command.pixels.length}` });
+			}
+			if (command.type === 'oled-line') {
+				emit({ type: 'log', text: `OLED line: (${command.x1},${command.y1})→(${command.x2},${command.y2})` });
+			}
 			if (command.type === 'subscribe') {
 				subs.add(command.sensor);
 				startStream(command.sensor);
@@ -105,7 +111,8 @@ export function createMockAdapter(): DeviceAdapter {
 			}
 			if (command.type === 'radio-send') {
 				// loopback for solo dev
-				setTimeout(() => emit({ type: 'radio', payload: command.payload }), 120);
+				const raw = String(command.payload);
+				setTimeout(() => emit({ type: 'radio', payload: command.payload, raw }), 120);
 			}
 		},
 

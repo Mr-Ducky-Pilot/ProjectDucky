@@ -11,6 +11,7 @@ const meta: MissionMeta = {
 	duckyIntro: 'Hot, cold, or just right? Fill in the thresholds and see!',
 	hardware: ['temp', 'led-matrix'],
 	pairMode: false,
+	dimension: 'science',
 	estMinutes: 10,
 	remixPrompts: [
 		'Change the faces to ANGRY, ASLEEP, or CONFUSED.',

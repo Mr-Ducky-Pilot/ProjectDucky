@@ -11,6 +11,7 @@ const meta: MissionMeta = {
 	duckyIntro: 'Set the finish line and the winning cry. Then battle it out!',
 	hardware: ['buttons', 'led-matrix'],
 	pairMode: false,
+	dimension: 'mechanics',
 	estMinutes: 10,
 	remixPrompts: [
 		'Set a really high WIN number like 50 for a long race.',

@@ -12,6 +12,7 @@ const meta: MissionMeta = {
 	hardware: ['led-matrix'],
 	pairMode: false,
 	preset: 'heartbeat',
+	dimension: 'art',
 	estMinutes: 2,
 	remixPrompts: ['Try clapping along.', 'Can two ducks beat in sync?']
 };

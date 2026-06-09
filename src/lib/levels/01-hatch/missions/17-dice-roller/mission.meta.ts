@@ -11,6 +11,7 @@ const meta: MissionMeta = {
 	duckyIntro: "Shake me hard! I'll roll and show you what you got.",
 	hardware: ['accel', 'led-matrix'],
 	pairMode: false,
+	dimension: 'mechanics',
 	estMinutes: 5,
 	remixPrompts: [
 		'Add a second dice — two shakes, two numbers, show their sum.',

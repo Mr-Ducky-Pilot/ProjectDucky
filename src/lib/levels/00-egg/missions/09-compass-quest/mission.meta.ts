@@ -12,6 +12,7 @@ const meta: MissionMeta = {
 	hardware: ['compass'],
 	pairMode: false,
 	preset: 'compass-quest',
+	dimension: 'science',
 	estMinutes: 4,
 	remixPrompts: [
 		'Hold a magnet near the chip. Watch it lie!',

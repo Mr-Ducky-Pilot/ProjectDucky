@@ -11,6 +11,7 @@ const meta: MissionMeta = {
 	duckyIntro: 'One button. One send. One receive. The simplest possible radio app.',
 	hardware: ['buttons', 'led-matrix', 'radio'],
 	pairMode: true,
+	dimension: 'mechanics',
 	estMinutes: 12,
 	remixPrompts: [
 		'Send a counter that increments each wave — the receiver can display the count.',

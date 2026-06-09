@@ -11,6 +11,7 @@ const meta: MissionMeta = {
 	duckyIntro: 'Tick tick tick. Do you pass it or hold it? Write the rules — then play.',
 	hardware: ['buttons', 'led-matrix', 'speaker', 'radio'],
 	pairMode: true,
+	dimension: 'mechanics',
 	estMinutes: 20,
 	remixPrompts: [
 		'Make the countdown speed up each time the potato is passed (subtract 2 per pass instead of 1).',

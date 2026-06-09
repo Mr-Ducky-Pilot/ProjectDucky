@@ -11,6 +11,7 @@ const meta: MissionMeta = {
 	duckyIntro: 'Arm me and keep quiet… any sound will set me off!',
 	hardware: ['mic', 'led-matrix', 'speaker'],
 	pairMode: false,
+	dimension: 'science',
 	estMinutes: 6,
 	remixPrompts: [
 		'Put it under your notebook: anyone who picks it up will be caught!',

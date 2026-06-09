@@ -11,6 +11,7 @@ const meta: MissionMeta = {
 	duckyIntro: 'Three moves, all yours to design. What does a duck do when it dances?',
 	hardware: ['buttons', 'accel', 'led-matrix', 'speaker'],
 	pairMode: false,
+	dimension: 'music',
 	estMinutes: 12,
 	remixPrompts: [
 		'Add a 4th move triggered by a logo touch (use pin_logo.is_touched()).',

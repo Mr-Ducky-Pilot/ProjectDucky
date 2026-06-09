@@ -12,6 +12,7 @@ const meta: MissionMeta = {
 	hardware: ['light', 'led-matrix'],
 	pairMode: false,
 	preset: 'hide-peek',
+	dimension: 'science',
 	estMinutes: 2,
 	remixPrompts: [
 		'Take Ducky into the dark with you. Pillow fort?',

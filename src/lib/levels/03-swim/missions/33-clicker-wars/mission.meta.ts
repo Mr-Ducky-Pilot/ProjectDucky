@@ -11,6 +11,7 @@ const meta: MissionMeta = {
 	duckyIntro: 'Clicks, broadcasts, scoreboards. You design them all.',
 	hardware: ['buttons', 'led-matrix', 'radio'],
 	pairMode: true,
+	dimension: 'movement',
 	estMinutes: 20,
 	remixPrompts: [
 		'Add a 3-second countdown at the start — both boards show "3", "2", "1", "GO!" before the loop begins.',

@@ -39,17 +39,19 @@ export type OutgoingCommand =
 	| { type: 'unsubscribe'; sensor: Sensor }
 	| { type: 'preset'; name: string }
 	| { type: 'light-threshold'; value: number }
-	| { type: 'radio-send'; payload: number }
+	| { type: 'radio-send'; payload: number | string }
 	| { type: 'oled-text'; lines: string[] /* 1–4 lines, joined by | on the wire */ }
 	| { type: 'oled-clear' }
 	| { type: 'oled-radar'; planeCount: number; blips: Array<{ dx: number; dy: number }> }
+	| { type: 'oled-pixels'; pixels: Array<{ x: number; y: number; c: number }> }
+	| { type: 'oled-line'; x1: number; y1: number; x2: number; y2: number; c: number }
 	| { type: 'quit' };
 
 export type IncomingEvent =
 	| { type: 'sensor'; sensor: Sensor; values: number[] }
 	| { type: 'button'; button: 'A' | 'B'; phase: 'down' | 'up' }
 	| { type: 'touch'; phase: 'down' | 'up' }
-	| { type: 'radio'; payload: number }
+	| { type: 'radio'; payload: number | string; raw: string }
 	| { type: 'log'; text: string };
 
 export function encode(cmd: OutgoingCommand): string {
@@ -78,6 +80,10 @@ export function encode(cmd: OutgoingCommand): string {
 			return 'O:clear\n';
 		case 'oled-radar':
 			return 'O:radar:' + cmd.planeCount + ';' + cmd.blips.map((b) => `${b.dx},${b.dy}`).join(';') + '\n';
+		case 'oled-pixels':
+			return 'O:px:' + cmd.pixels.map((p) => `${p.x},${p.y},${p.c}`).join(';') + '\n';
+		case 'oled-line':
+			return `O:ln:${cmd.x1},${cmd.y1},${cmd.x2},${cmd.y2},${cmd.c}\n`;
 		case 'quit':
 			return 'Q\n';
 	}
@@ -104,8 +110,10 @@ export function decode(line: string): IncomingEvent | null {
 		}
 		case 'T':
 			return { type: 'touch', phase: body as 'down' | 'up' };
-		case 'R':
-			return { type: 'radio', payload: Number(body) };
+		case 'R': {
+			const n = Number(body);
+			return { type: 'radio', payload: Number.isFinite(n) && body.trim() !== '' ? n : body, raw: body };
+		}
 		case 'L':
 			return { type: 'log', text: body };
 	}

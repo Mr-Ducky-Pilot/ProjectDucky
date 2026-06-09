@@ -11,6 +11,7 @@ const meta: MissionMeta = {
 	duckyIntro: 'Set your tempo and hit play. I\'ll keep the beat — you keep the rhythm!',
 	hardware: ['led-matrix', 'speaker'],
 	pairMode: false,
+	dimension: 'music',
 	estMinutes: 5,
 	remixPrompts: [
 		'Play a song and try to match its BPM by tapping.',

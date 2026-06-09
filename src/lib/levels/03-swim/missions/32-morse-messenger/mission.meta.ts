@@ -11,6 +11,7 @@ const meta: MissionMeta = {
 	duckyIntro: 'Write the alphabet in dots and dashes. Then talk without saying a word.',
 	hardware: ['buttons', 'led-matrix', 'speaker', 'radio'],
 	pairMode: true,
+	dimension: 'mechanics',
 	estMinutes: 25,
 	remixPrompts: [
 		'Add letters G–Z to your MORSE dictionary (look them up online and add each one).',

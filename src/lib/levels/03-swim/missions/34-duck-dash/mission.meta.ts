@@ -11,6 +11,7 @@ const meta: MissionMeta = {
 	duckyIntro: 'Five functions. A full game. You build it.',
 	hardware: ['accel', 'buttons', 'led-matrix', 'radio'],
 	pairMode: true,
+	dimension: 'mechanics',
 	estMinutes: 35,
 	remixPrompts: [
 		'Add collision: if you land on the opponent\'s position, lose a point (score -= 1).',

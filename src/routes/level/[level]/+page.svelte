@@ -3,11 +3,51 @@
 	import Ducky from '$lib/components/Ducky.svelte';
 	import SpeechBubble from '$lib/components/SpeechBubble.svelte';
 	import FlashButton from '$lib/components/FlashButton.svelte';
+	import LevelComplete from '$lib/components/LevelComplete.svelte';
 	import { connection } from '$lib/stores/connection';
+	import { progress, isCompleted } from '$lib/stores/progress';
+	import { pet, markLevelCompleted } from '$lib/stores/pet';
+	import { goto } from '$app/navigation';
 	import dialogue from '$lib/data/dialogue.json';
+	import {
+		DIMENSION_COLOR,
+		DIMENSION_LABEL,
+		DIMENSION_EMOJI,
+		type Dimension
+	} from '$lib/missions/types';
 
 	let { data } = $props();
 	const conn = connection;
+
+	let activeFilter = $state<Dimension | null>(null);
+	let showComplete = $state(false);
+	let firedComplete = false;
+
+	const availableDimensions = $derived.by(() => {
+		const s = new Set<Dimension>();
+		for (const m of data.missions) s.add((m.dimension ?? 'mechanics') as Dimension);
+		return [...s];
+	});
+
+	const filteredMissions = $derived(
+		activeFilter
+			? data.missions.filter((m) => (m.dimension ?? 'mechanics') === activeFilter)
+			: data.missions
+	);
+
+	const nextIncomplete = $derived(
+		data.missions.find((m) => !isCompleted($progress, m.level, m.id))
+	);
+
+	$effect(() => {
+		if (data.missions.length === 0) return;
+		const allDone = data.missions.every((m) => isCompleted($progress, m.level, m.id));
+		if (allDone && !firedComplete) {
+			firedComplete = true;
+			markLevelCompleted(data.level.id);
+			showComplete = true;
+		}
+	});
 
 	const intro = $derived(
 		(dialogue as Record<string, string>)[`level.${data.level.id}.intro`] ??
@@ -91,14 +131,60 @@
 			</div>
 		{/if}
 
+		{#if nextIncomplete}
+			<a
+				href="/mission/{nextIncomplete.level}/{nextIncomplete.id}"
+				class="mt-6 flex items-center gap-3 rounded-2xl bg-night-ink p-4 text-white shadow-soft transition hover:-translate-y-0.5"
+			>
+				<span class="text-2xl">{nextIncomplete.emoji}</span>
+				<div class="flex-1">
+					<p class="text-[11px] font-bold uppercase tracking-wider text-duck-yellow">Up next</p>
+					<p class="font-display font-extrabold">{nextIncomplete.title}</p>
+				</div>
+				<span class="font-display font-extrabold">→</span>
+			</a>
+		{/if}
+
 		{#if data.missions.length === 0}
 			<p class="mt-10 text-center text-(--color-night-soft)">No missions yet — coming soon!</p>
 		{:else}
-			<div class="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-				{#each data.missions as mission (mission.id)}
+			{#if availableDimensions.length > 1}
+				<div class="mt-6 flex flex-wrap items-center gap-2">
+					<button
+						class="rounded-full px-3 py-1.5 text-xs font-bold"
+						class:bg-night-ink={activeFilter === null}
+						class:text-white={activeFilter === null}
+						class:bg-mist={activeFilter !== null}
+						class:text-night-soft={activeFilter !== null}
+						onclick={() => (activeFilter = null)}
+					>
+						All
+					</button>
+					{#each availableDimensions as d}
+						<button
+							class="rounded-full px-3 py-1.5 text-xs font-bold"
+							style={activeFilter === d
+								? `background: ${DIMENSION_COLOR[d]}; color: white;`
+								: `background: ${DIMENSION_COLOR[d]}1f; color: ${DIMENSION_COLOR[d]};`}
+							onclick={() => (activeFilter = activeFilter === d ? null : d)}
+						>
+							{DIMENSION_EMOJI[d]} {DIMENSION_LABEL[d]}
+						</button>
+					{/each}
+				</div>
+			{/if}
+
+			<div class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+				{#each filteredMissions as mission (mission.id)}
 					<MissionCard {mission} />
 				{/each}
 			</div>
 		{/if}
 	</div>
 </section>
+
+<LevelComplete
+	level={data.level.id}
+	bind:open={showComplete}
+	onNext={() => goto(`/level/${data.level.id + 1}`)}
+/>

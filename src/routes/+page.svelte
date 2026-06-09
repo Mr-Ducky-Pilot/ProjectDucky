@@ -69,6 +69,9 @@
 			<a href="/connect" class="btn btn-secondary">
 				<span class="mono">$</span> connect a micro:bit
 			</a>
+			<a href="/pet" class="btn btn-secondary">
+				<span>🦆</span> meet your duck
+			</a>
 		</div>
 
 		<div class="hero-glyphs" aria-hidden="true">

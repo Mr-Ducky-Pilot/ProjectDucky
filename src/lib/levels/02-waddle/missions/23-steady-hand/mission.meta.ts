@@ -11,6 +11,7 @@ const meta: MissionMeta = {
 	duckyIntro: 'Two blanks — one for how steady, one for how fast. Ready?',
 	hardware: ['accel', 'led-matrix'],
 	pairMode: false,
+	dimension: 'mechanics',
 	estMinutes: 12,
 	remixPrompts: [
 		'Make the wobble limit stricter (lower number) to make it harder.',

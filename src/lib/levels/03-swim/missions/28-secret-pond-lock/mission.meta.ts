@@ -11,6 +11,7 @@ const meta: MissionMeta = {
 	duckyIntro: 'You set the secret. You write the check. Can someone else crack your pond?',
 	hardware: ['buttons', 'accel', 'led-matrix'],
 	pairMode: false,
+	dimension: 'mechanics',
 	estMinutes: 15,
 	remixPrompts: [
 		'Add a wrong-entry counter and lock the board for 5 seconds after 3 wrong guesses.',

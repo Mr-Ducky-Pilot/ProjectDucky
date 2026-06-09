@@ -12,6 +12,7 @@ const meta: MissionMeta = {
 	hardware: ['mic', 'led-matrix'],
 	pairMode: false,
 	preset: 'whisper',
+	dimension: 'music',
 	estMinutes: 3,
 	remixPrompts: [
 		'How quiet can you be and still move the meter?',

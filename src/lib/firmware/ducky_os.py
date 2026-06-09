@@ -66,17 +66,26 @@ PRESET_LIST = (
     'heartbeat', 'tap-wake', 'shake', 'hide-peek',
     'whisper', 'touch-logo', 'compass-quest',
     'sky-radar', 'iss-orbit',
+    'breathe', 'sunrise', 'dice', 'mood-badge',
+    'bubble', 'firefly', 'warm-cold',
 )
 MENU_ICONS = {
-    'heartbeat':     Image("09090:09090:09990:00900:00000"),   # heart outline
-    'tap-wake':      Image("00000:99099:00000:09990:00000"),   # sleep face (ZZZ)
-    'shake':         Image("90009:09090:00900:09090:90009"),   # X (dizzy)
-    'hide-peek':     Image("00000:09090:00000:09990:00000"),   # plain face
-    'whisper':       Image("00900:09990:99999:09990:00900"),   # sound burst
-    'touch-logo':    Image("09900:99990:99999:09990:00000"),   # duck
-    'compass-quest': Image("00900:09990:90909:00900:00900"),   # N arrow
-    'sky-radar':     Image("00900:09090:90009:09090:00900"),   # radar circle
-    'iss-orbit':     Image("00900:09000:90009:00090:00900"),   # tilted orbit
+    'heartbeat':     Image("09090:09090:09990:00900:00000"),
+    'tap-wake':      Image("00000:99099:00000:09990:00000"),
+    'shake':         Image("90009:09090:00900:09090:90009"),
+    'hide-peek':     Image("00000:09090:00000:09990:00000"),
+    'whisper':       Image("00900:09990:99999:09990:00900"),
+    'touch-logo':    Image("09900:99990:99999:09990:00000"),
+    'compass-quest': Image("00900:09990:90909:00900:00900"),
+    'sky-radar':     Image("00900:09090:90009:09090:00900"),
+    'iss-orbit':     Image("00900:09000:90009:00090:00900"),
+    'breathe':       Image("00000:09990:99999:09990:00000"),   # filled circle
+    'sunrise':       Image("00900:09990:99999:99999:99999"),   # sun rising
+    'dice':          Image("99999:90909:99999:90909:99999"),   # cube
+    'mood-badge':    Image("09090:00000:00000:90009:09990"),   # face
+    'bubble':        Image("09990:90009:90009:09990:00000"),   # bubble
+    'firefly':       Image("00000:00900:09090:00900:00000"),   # spark
+    'warm-cold':     Image("00900:09990:09090:09090:09990"),   # thermometer
 }
 
 # Precomputed integer compass spoke vectors for 8 directions (24px radius)
@@ -271,6 +280,23 @@ def handle(line):
                 if rest == 'clear':
                     oled.fill(0)
                     oled.show()
+                elif rest.startswith('px:'):
+                    # O:px:x,y,c;x,y,c;... — batch of pixels
+                    for pix in rest[3:].split(';'):
+                        try:
+                            x, y, c = pix.split(',')
+                            oled.pixel(int(x), int(y), int(c))
+                        except:
+                            pass
+                    oled.show()
+                elif rest.startswith('ln:'):
+                    # O:ln:x1,y1,x2,y2,c
+                    try:
+                        a, b, c, d, e = rest[3:].split(',')
+                        oled.line(int(a), int(b), int(c), int(d), int(e))
+                        oled.show()
+                    except:
+                        pass
                 elif rest.startswith('radar:'):
                     # O:radar:count;dx1,dy1;dx2,dy2;...
                     # dx,dy are pixel offsets from centre (48,44), range -40..+40
@@ -575,6 +601,197 @@ def tick():
             oled.text('Simulated', 14, 87, 4)
             oled.show()
 
+    elif preset == 'breathe':
+        if n - state.get('t', 0) > 80:
+            state['t'] = n
+            phase = state.get('p', 0)
+            state['p'] = (phase + 1) % 32
+            b = int(4.5 + 4.5 * math.sin(phase * math.pi / 16))
+            inner = max(1, b)
+            outer = max(0, b - 4)
+            mid = (inner + outer) // 2
+            display.show(Image(
+                "{o}{o}{o}{o}{o}:{o}{m}{m}{m}{o}:{o}{m}{i}{m}{o}:{o}{m}{m}{m}{o}:{o}{o}{o}{o}{o}"
+                .format(o=outer, m=mid, i=inner)
+            ))
+        if oled and n - state.get('ot', 0) > 80:
+            state['ot'] = n
+            phase = state.get('p', 0)
+            r = 14 + int(18 * (1 + math.sin(phase * math.pi / 16)) / 2)
+            oled.fill(0)
+            oled.fill_circle(48, 44, r, 12)
+            oled.fill_circle(48, 44, max(2, r - 6), 6)
+            oled.text('breathe', 24, 82, 8)
+            oled.show()
+
+    elif preset == 'sunrise':
+        if n - state.get('t', 0) > 250:
+            state['t'] = n
+            try:
+                l = display.read_light_level()
+            except:
+                l = 0
+            lit = max(0, min(5, int(l / 50)))
+            rows = ["99999" if (4 - r) < lit else "00000" for r in range(5)]
+            display.show(Image(":".join(rows)))
+        if oled and n - state.get('ot', 0) > 400:
+            state['ot'] = n
+            try:
+                l = display.read_light_level()
+            except:
+                l = 0
+            oled.fill(0)
+            y = 70 - int(l / 5)
+            oled.fill_circle(48, max(20, y), 18, max(6, int(l / 18)))
+            oled.hline(0, 78, 96, 9)
+            oled.text('Sunrise', 24, 84, 10)
+            oled.show()
+
+    elif preset == 'dice':
+        if not state.get('rolled'):
+            display.show(Image("09990:90009:00090:00900:00900"))
+            state['rolled'] = True
+        try:
+            g = accelerometer.get_strength() / 1024.0
+        except:
+            g = 1.0
+        if g > 1.6 and n - state.get('lastroll', 0) > 600:
+            state['lastroll'] = n
+            for _ in range(4):
+                display.show(Image("99999:90009:90009:90009:99999"))
+                sleep(40)
+                display.show(Image("00000:09990:09090:09990:00000"))
+                sleep(40)
+            try:
+                from random import randint
+                face = randint(1, 6)
+            except:
+                face = ((n // 7) % 6) + 1
+            state['face'] = face
+            DICE = (
+                "00000:00000:00900:00000:00000",
+                "00000:09000:00000:00090:00000",
+                "90000:00000:00900:00000:00009",
+                "00000:90009:00000:90009:00000",
+                "00000:90009:00900:90009:00000",
+                "00000:90909:00000:90909:00000",
+            )
+            display.show(Image(DICE[face - 1]))
+            music.pitch(440 + face * 60, 80, wait=False)
+        if oled and n - state.get('ot', 0) > 400:
+            state['ot'] = n
+            face = state.get('face', 0)
+            oled.fill(0)
+            if face:
+                oled.big_text(str(face), 38, 30, 15)
+                oled.text('shake again', 12, 78, 8)
+            else:
+                oled.big_text('SHAKE', 4, 26, 15)
+                oled.big_text('ME!', 22, 50, 12)
+            oled.show()
+
+    elif preset == 'mood-badge':
+        MOODS = (FACES['happy'], FACES['sad'], FACES['wink'], FACES['sleep'], FACES['dizzy'])
+        MOOD_NAMES = ('happy', 'sad', 'wink', 'sleep', 'silly')
+        idx = state.get('m', 0)
+        if n - state.get('t', 0) > 200:
+            state['t'] = n
+            display.show(MOODS[idx])
+        if oled and n - state.get('ot', 0) > 400:
+            state['ot'] = n
+            oled.fill(0)
+            oled.text('Mood badge', 12, 4, 10)
+            oled.big_text(MOOD_NAMES[idx], 4, 32, 15)
+            oled.text('A<        >B', 6, 80, 7)
+            oled.show()
+
+    elif preset == 'bubble':
+        if n - state.get('t', 0) > 80:
+            state['t'] = n
+            try:
+                ax = accelerometer.get_x()
+                ay = accelerometer.get_y()
+            except:
+                ax = 0; ay = 0
+            bx = 2 - max(-2, min(2, int(ax / 350)))
+            by = 2 - max(-2, min(2, int(ay / 350)))
+            grid = [['0'] * 5 for _ in range(5)]
+            grid[by][bx] = '9'
+            display.show(Image(":".join("".join(r) for r in grid)))
+        if oled and n - state.get('ot', 0) > 80:
+            state['ot'] = n
+            try:
+                ax = accelerometer.get_x()
+                ay = accelerometer.get_y()
+            except:
+                ax = 0; ay = 0
+            bx = 48 - max(-32, min(32, ax // 30))
+            by = 48 - max(-32, min(32, ay // 30))
+            oled.fill(0)
+            oled.rect(8, 8, 80, 80, 6)
+            oled.circle(bx, by, 8, 13)
+            oled.pixel(bx - 3, by - 3, 15)
+            oled.text('tilt me', 26, 86, 8)
+            oled.show()
+
+    elif preset == 'firefly':
+        if n - state.get('t', 0) > 120:
+            state['t'] = n
+            try:
+                ax = accelerometer.get_x() // 350
+                ay = accelerometer.get_y() // 350
+            except:
+                ax = 0; ay = 0
+            x = state.get('x', 2) + max(-1, min(1, ax))
+            y = state.get('y', 2) + max(-1, min(1, ay))
+            x = max(0, min(4, x))
+            y = max(0, min(4, y))
+            state['x'] = x; state['y'] = y
+            grid = [['0'] * 5 for _ in range(5)]
+            grid[y][x] = '9'
+            for dy in (-1, 1):
+                ny = y + dy
+                if 0 <= ny <= 4:
+                    grid[ny][x] = max(grid[ny][x], '3')
+            for dx in (-1, 1):
+                nx = x + dx
+                if 0 <= nx <= 4:
+                    grid[y][nx] = max(grid[y][nx], '3')
+            display.show(Image(":".join("".join(r) for r in grid)))
+        if oled and n - state.get('ot', 0) > 200:
+            state['ot'] = n
+            x = state.get('x', 2); y = state.get('y', 2)
+            oled.fill(0)
+            ox = 8 + x * 18
+            oy = 8 + y * 16
+            oled.fill_circle(ox, oy, 6, 15)
+            oled.fill_circle(ox, oy, 10, 4)
+            oled.text('firefly', 24, 84, 10)
+            oled.show()
+
+    elif preset == 'warm-cold':
+        if n - state.get('t', 0) > 600:
+            state['t'] = n
+            try:
+                tc = temperature()
+            except:
+                tc = 20
+            lit = max(0, min(5, (tc - 18) // 3 + 1))
+            rows = ["99999" if (4 - r) < lit else "00000" for r in range(5)]
+            display.show(Image(":".join(rows)))
+        if oled and n - state.get('ot', 0) > 700:
+            state['ot'] = n
+            try:
+                tc = temperature()
+            except:
+                tc = 20
+            oled.fill(0)
+            oled.big_text(str(tc) + 'C', 14, 28, 15)
+            tag = 'cool' if tc < 22 else ('warm' if tc < 28 else 'hot!')
+            oled.text(tag, 32, 60, 12)
+            oled.text('warm-cold', 18, 84, 6)
+            oled.show()
+
     elif preset == 'touch-logo':
         if n - state.get('t', 0) > 1000:
             state['t'] = n
@@ -646,7 +863,9 @@ while True:
             show_menu()
         else:
             print('<B A down>')
-            if preset == 'tap-wake':
+            if preset == 'mood-badge':
+                state['m'] = (state.get('m', 0) - 1) % 5
+            elif preset == 'tap-wake':
                 display.show(Image.HAPPY)
                 if oled:
                     try:
@@ -673,6 +892,8 @@ while True:
             show_menu()
         else:
             print('<B B down>')
+            if preset == 'mood-badge':
+                state['m'] = (state.get('m', 0) + 1) % 5
 
     # 5. Logo touch — short tap = game action or menu select; long press ≥1.5s = menu
     try:
