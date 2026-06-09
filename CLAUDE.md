@@ -318,6 +318,51 @@ Font: `font-display` = Nunito (rounded, kid-friendly). `font-mono` = JetBrains M
 
 ---
 
+### June 2026 — Curriculum expansion (76 missions, Pet system, L4 + L5)
+
+The kit doubled in size. From 33 missions to 76, across 8 creative dimensions
+(art / music / science / wellbeing / movement / story / pet / mechanics).
+L4 ("Feather") was designed from scratch as a **Pet Designer** level.
+L5 ("Soar") is an open sandbox + remix gallery.
+
+**Per-level totals:** L0 15 · L1 17 · L2 13 · L3 14 · L4 9 · L5 8.
+
+**New stores:**
+- `src/lib/stores/pet.ts` — persistent customisable pet (name, colours,
+  pattern, accessory, personality, friends, stats). Schema-versioned
+  (`schemaVersion: 1`) because `.duck` files leave the device. `migrate()`
+  backfills defaults on load.
+
+**New shared components:** `PetAvatar` (parameterised SVG mascot —
+replaces hardcoded `Ducky.svelte`), `PetEditor`, `PetStatSheet`, `Confetti`,
+`LevelComplete`, `JourneyPath`, `DataGraph`, `BreathTrainer`, `QrShareCard`,
+`DuckShareLoader`, `FreePythonEditor`.
+
+`Ducky.svelte` is now a thin wrapper over `PetAvatar` (which consumes a Pet
+config). All places that previously showed the generic duck now show the
+user's customised pet.
+
+**New routes:** `/share` (URL-hash or `.duck` adoption), `/pet` (stat sheet +
+edit + QR share), `/friends` (radio-met ducks), `/gallery` (full collection).
+
+**Sharing:** `.duck` JSON file + URL hash via `CompressionStream('deflate-raw')`
++ QR via `qrcode` npm dep. Board-to-board radio handshake in L3 mission
+`40-radio-pet-meet` (HELLO/INFO/ACK).
+
+**Firmware additions** (`ducky_os.py`): new presets `breathe`, `sunrise`,
+`dice`, `mood-badge`, `bubble`, `firefly`, `warm-cold`. New protocol
+sub-commands `O:px:` (batch pixels) and `O:ln:` (line). Radio events now
+carry both numeric and string payloads. Combined firmware = ~41KB
+(well under micro:bit v2's ~80KB user budget).
+
+**Dimension tags:** `MissionMeta.dimension` (single primary) and `dimensions`
+(secondary). Level pages show filter chips, mission cards show a colored
+dot, journey page shows a dimension legend with completion counts.
+
+**Level page upgrades:** "Up next" banner pointing at the first incomplete
+mission, `LevelComplete` overlay (with `Confetti` + celebrating `PetAvatar`)
+when all missions in a level are done, dimension filter chips.
+
 ## What's Next
 
 ### Level 2 polish
