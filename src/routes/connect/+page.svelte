@@ -2,6 +2,7 @@
 	import Ducky from '$lib/components/Ducky.svelte';
 	import SpeechBubble from '$lib/components/SpeechBubble.svelte';
 	import { connection } from '$lib/stores/connection';
+	import { petLabel } from '$lib/stores/pet';
 	import dialogue from '$lib/data/dialogue.json';
 
 	const conn = connection;
@@ -62,7 +63,7 @@
 						<li>Use the USB cable in the box.</li>
 						<li>Wait for the “MICROBIT” drive to appear on your computer.</li>
 						<li>
-							Click <strong>Connect Ducky</strong>, pick your micro:bit from the
+							Click <strong>Connect {$petLabel}</strong>, pick your micro:bit from the
 							browser pop-up.
 						</li>
 					</ol>
@@ -74,7 +75,7 @@
 					{/if}
 				{:else}
 					<p class="mx-auto mt-3 max-w-md text-(--color-night-soft)">
-						No real micro:bit needed — Ducky will pretend to be one. Sensors
+						No real micro:bit needed — {$petLabel} will pretend to be one. Sensors
 						will show fake-but-believable values; flashes finish in a couple
 						of seconds. Handy for poking around.
 					</p>
@@ -86,11 +87,11 @@
 					class="pop-btn pop-btn--blue mt-6"
 					disabled={!$conn.webusbSupported && $conn.kind === 'real'}
 				>
-					{$conn.kind === 'mock' ? 'Connect to pretend Ducky' : 'Connect Ducky'}
+					{$conn.kind === 'mock' ? `Connect to pretend ${$petLabel}` : `Connect ${$petLabel}`}
 				</button>
 			{:else if $conn.status === 'connected'}
 				<h2 class="text-2xl">
-					{$conn.kind === 'real' ? 'Real Ducky connected 🎉' : 'Pretend Ducky online'}
+					{$conn.kind === 'real' ? `Real ${$petLabel} connected 🎉` : `Pretend ${$petLabel} online`}
 				</h2>
 
 				{#if $conn.deviceLabel}
@@ -166,7 +167,7 @@
 		</div>
 		<p class="mt-2 max-w-sm text-center text-xs text-(--color-night-soft)">
 			{#if $conn.preferMock}
-				No real device needed — Ducky will simulate sensors and flashes.
+				No real device needed — {$petLabel} will simulate sensors and flashes.
 			{:else if !$conn.webusbSupported}
 				Your browser doesn’t support WebUSB; pretend mode is on automatically.
 			{:else}

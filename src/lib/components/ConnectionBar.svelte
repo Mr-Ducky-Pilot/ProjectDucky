@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { connection } from '$lib/stores/connection';
+	import { petLabel } from '$lib/stores/pet';
 
 	const conn = connection;
 
@@ -32,7 +33,7 @@
 		<span
 			class="flex items-center gap-1 text-[10px] font-extrabold tracking-wide text-(--color-night-soft) uppercase"
 		>
-			Ducky
+			{$petLabel}
 			{#if $conn.status === 'connected'}
 				<span class="rounded-full px-1.5 py-px text-[9px] {kindBadgeClass}">
 					{$conn.kind === 'real' ? 'Real' : 'Pretend'}

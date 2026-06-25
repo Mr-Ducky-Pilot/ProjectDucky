@@ -2,6 +2,7 @@
 	import { connection } from '$lib/stores/connection';
 	import { setMood, say } from '$lib/stores/ducky';
 	import { buildDuckyHex } from '$lib/firmware/build';
+	import { petLabel } from '$lib/stores/pet';
 
 	type Props = {
 		preset?: string;
@@ -12,10 +13,12 @@
 
 	let {
 		preset,
-		label = 'Send to Ducky',
+		label,
 		flashedLabel = 'Done!',
 		onFlashed
 	}: Props = $props();
+
+	const buttonLabel = $derived(label ?? `Send to ${$petLabel}`);
 
 	const conn = connection;
 	let justFlashed = $state(false);
@@ -125,13 +128,13 @@
 		{:else if $conn.status === 'flashing'}
 			Flashing… {Math.round(($conn.flash?.pct ?? 0) * 100)}%
 		{:else if booting}
-			{alreadyLoaded ? 'Activating…' : 'Booting Ducky…'}
+			{alreadyLoaded ? 'Activating…' : `Booting ${$petLabel}…`}
 		{:else if justFlashed}
 			✅ {flashedLabel}
 		{:else if alreadyLoaded && preset}
 			Activate ▶
 		{:else}
-			{label}
+			{buttonLabel}
 		{/if}
 	</button>
 	{#if localError}

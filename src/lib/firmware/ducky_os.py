@@ -178,9 +178,17 @@ def _oled_show_menu(o):
     o.fill(0)
     name = PRESET_LIST[menu_idx]
     parts = name.split('-')
-    o.big_text(parts[0], 2, 8, 15)
+    # big_text is 12 px wide per char; panel is 96 px so max 7 chars fit at x=2.
+    # Fall back to small text (6 px/char, 16 chars at x=2) for long words.
+    if len(parts[0]) <= 7:
+        o.big_text(parts[0], 2, 8, 15)
+    else:
+        o.text(parts[0], 2, 12, 15)
     if len(parts) > 1:
-        o.big_text(parts[1], 2, 30, 10)
+        if len(parts[1]) <= 7:
+            o.big_text(parts[1], 2, 30, 10)
+        else:
+            o.text(parts[1], 2, 30, 10)
     _draw_duck_small(o, 68, 2, 10)
     o.text('A<   >B', 22, 84, 6)
     o.show()
@@ -301,7 +309,7 @@ def handle(line):
                     # O:radar:count;dx1,dy1;dx2,dy2;...
                     # dx,dy are pixel offsets from centre (48,44), range -40..+40
                     parts = rest[6:].split(';')
-                    count = parts[0] if parts else '0'
+                    count = parts[0] if parts and parts[0] else '0'
                     cx, cy, r = 48, 44, 38
                     oled.fill(0)
                     oled.circle(cx, cy, r, 5)
@@ -313,7 +321,7 @@ def handle(line):
                             dx, dy = blip.split(',')
                             bx = cx + int(dx)
                             by = cy + int(dy)
-                            if 0 < bx < 96 and 0 < by < 96:
+                            if 0 <= bx < 96 and 0 <= by < 96:
                                 oled.fill_circle(bx, by, 2, 15)
                         except:
                             pass
@@ -812,7 +820,7 @@ def tick():
 
 
 # --- Boot ---
-radio.config(channel=42, group=42)
+radio.config(channel=42, group=42, length=128)
 radio.on()
 
 # Probe for Grove OLED 1.12" (also bumps I2C to 400 kHz)

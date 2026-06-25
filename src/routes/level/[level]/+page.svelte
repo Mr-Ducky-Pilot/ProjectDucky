@@ -6,7 +6,7 @@
 	import LevelComplete from '$lib/components/LevelComplete.svelte';
 	import { connection } from '$lib/stores/connection';
 	import { progress, isCompleted } from '$lib/stores/progress';
-	import { pet, markLevelCompleted } from '$lib/stores/pet';
+	import { pet, petLabel, markLevelCompleted } from '$lib/stores/pet';
 	import { goto } from '$app/navigation';
 	import dialogue from '$lib/data/dialogue.json';
 	import {
@@ -107,25 +107,25 @@
 				<div class="flex-1">
 					{#if duckyReady}
 						<p class="font-display font-extrabold" style="color: var(--color-leaf-deep)">
-							✅ Ducky is ready — pick a mission!
+							✅ {$petLabel} is ready — pick a mission!
 						</p>
 						<p class="mt-1 text-sm text-(--color-night-soft)">
 							Switching missions is instant — no re-flashing needed.
-							Ducky also works standalone: use A/B to browse activities, tap the logo to activate.
+							{$petLabel} also works standalone: use A/B to browse activities, tap the logo to activate.
 						</p>
 					{:else}
 						<p class="font-display font-extrabold text-(--color-night-ink)">
-							Flash Ducky once to get started
+							Flash {$petLabel} once to get started
 						</p>
 						<p class="mt-1 text-sm text-(--color-night-soft)">
 							One flash loads all {data.level.id === 0 ? 'Level 0' : 'Level 1'} activities.
-							After that, switching missions is instant. Ducky also works standalone without the computer.
+							After that, switching missions is instant. {$petLabel} also works standalone without the computer.
 						</p>
 					{/if}
 				</div>
 				{#if !duckyReady}
 					<div class="shrink-0">
-						<FlashButton label="Flash Ducky" flashedLabel="Ducky is ready!" onFlashed={handleFlashed} />
+						<FlashButton label="Flash {$petLabel}" flashedLabel="{$petLabel} is ready!" onFlashed={handleFlashed} />
 					</div>
 				{/if}
 			</div>

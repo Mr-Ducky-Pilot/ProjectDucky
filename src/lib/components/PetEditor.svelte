@@ -5,9 +5,12 @@
 		setPetName,
 		setPetColor,
 		setPetPattern,
-		setPetAccessory
+		setPetAccessory,
+		setPetSpecies,
+		ALL_SPECIES,
+		SPECIES_INFO
 	} from '$lib/stores/pet';
-	import type { PetPattern, PetAccessory } from '$lib/stores/pet';
+	import type { PetPattern, PetAccessory, PetSpecies } from '$lib/stores/pet';
 
 	type Props = { showName?: boolean };
 	let { showName = true }: Props = $props();
@@ -23,8 +26,15 @@
 		{ primary: '#b18cff', secondary: '#dac4ff', bill: '#ffd23a' }, // purple
 		{ primary: '#1c1f2e', secondary: '#4a4f6c', bill: '#ffd23a' }, // midnight
 		{ primary: '#fff8ec', secondary: '#ffffff', bill: '#ff9b1a' }, // ghost
-		{ primary: '#ff5fa2', secondary: '#ff8ec3', bill: '#ffd23a' } //  pink
+		{ primary: '#ff5fa2', secondary: '#ff8ec3', bill: '#ffd23a' } // pink
 	];
+
+	function pickSpecies(s: PetSpecies) {
+		// Recolour to species default if user is still on the default duck colour scheme,
+		// so picking "Fox" actually looks foxy without an extra colour click.
+		const onDefault = $pet.color.primary === SPECIES_INFO[$pet.species].defaultColor.primary;
+		setPetSpecies(s, { recolor: onDefault });
+	}
 </script>
 
 <div class="grid gap-6 md:grid-cols-[auto_1fr]">
@@ -38,13 +48,35 @@
 				<span class="text-xs font-bold uppercase tracking-widest text-night-soft">Name</span>
 				<input
 					class="mt-1 w-full rounded-md border border-mist bg-white px-3 py-2 font-display text-lg"
-					placeholder="Pick a name"
+					placeholder={`Pick a name (e.g. ${SPECIES_INFO[$pet.species].defaultName})`}
 					maxlength="20"
 					value={$pet.name}
 					oninput={(e) => setPetName((e.currentTarget as HTMLInputElement).value)}
 				/>
 			</label>
 		{/if}
+
+		<div>
+			<p class="text-xs font-bold uppercase tracking-widest text-night-soft">Pet</p>
+			<div class="mt-2 grid grid-cols-4 gap-2 sm:grid-cols-6">
+				{#each ALL_SPECIES as s}
+					{@const info = SPECIES_INFO[s]}
+					<button
+						class="flex flex-col items-center gap-0.5 rounded-2xl border-2 p-2 transition hover:bg-white"
+						class:border-night-ink={$pet.species === s}
+						class:bg-white={$pet.species === s}
+						class:border-transparent={$pet.species !== s}
+						aria-pressed={$pet.species === s}
+						onclick={() => pickSpecies(s)}
+					>
+						<span class="text-2xl leading-none" aria-hidden="true">{info.emoji}</span>
+						<span class="text-[10px] font-bold uppercase tracking-wider text-night-soft">
+							{info.label}
+						</span>
+					</button>
+				{/each}
+			</div>
+		</div>
 
 		<div>
 			<p class="text-xs font-bold uppercase tracking-widest text-night-soft">Colour</p>

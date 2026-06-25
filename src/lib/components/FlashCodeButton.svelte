@@ -2,6 +2,7 @@
 	import { connection } from '$lib/stores/connection';
 	import { setMood, say } from '$lib/stores/ducky';
 	import { buildCustomHex } from '$lib/firmware/build';
+	import { petLabel } from '$lib/stores/pet';
 
 	type Props = {
 		code: string;
@@ -71,7 +72,7 @@
 		{:else if $conn.status === 'flashing'}
 			Flashing… {Math.round(($conn.flash?.pct ?? 0) * 100)}%
 		{:else if justFlashed}
-			✅ Running on Ducky!
+			✅ Running on {$petLabel}!
 		{:else if disabled}
 			Fill all the blanks first
 		{:else}

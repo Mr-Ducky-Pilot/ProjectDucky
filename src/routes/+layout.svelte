@@ -2,6 +2,7 @@
 	import '../app.css';
 	import { page } from '$app/state';
 	import { connection } from '$lib/stores/connection';
+	import { petLabel } from '$lib/stores/pet';
 
 	let { children } = $props();
 
@@ -22,7 +23,7 @@
 	const statusLabel = $derived.by(() => {
 		switch ($conn.status) {
 			case 'connected':
-				return $conn.kind === 'real' ? 'Real Ducky' : 'Pretend Ducky';
+				return $conn.kind === 'real' ? `Real ${$petLabel}` : `Pretend ${$petLabel}`;
 			case 'flashing':
 				return `Flashing ${Math.round(($conn.flash?.pct ?? 0) * 100)}%`;
 			case 'requesting':
@@ -63,7 +64,7 @@
 				>
 					<span class="size-2.5 rounded-full {dotColor}"></span>
 					<span class="hidden sm:inline">{statusLabel}</span>
-					<span class="sm:hidden">Ducky</span>
+					<span class="sm:hidden">{$petLabel}</span>
 				</a>
 			{:else}
 				<span

@@ -54,8 +54,9 @@ while True:
 	<div class="flex items-start gap-3 rounded-xl border-2 border-(--color-duck-yellow)/40 bg-(--color-duck-yellow)/5 p-4 text-sm">
 		<span class="text-xl">🤝</span>
 		<div>
-			<p class="font-bold text-(--color-night-ink)">Flash the same code to both boards — but pick different secrets</p>
-			<p class="text-(--color-night-soft)">Both boards run the same program. The only difference is the <code>MY_SECRET</code> value. Keep pressing A until the numbers happen to match — then both boards celebrate at once!</p>
+			<p class="font-bold text-(--color-night-ink)">Both boards need the same secret to celebrate</p>
+			<p class="text-(--color-night-soft)">Flash the same code to both boards. Decide together what <code>MY_SECRET</code> should be — if you pick different numbers, neither side will celebrate. Press A on each board to broadcast: the match check fires <code>celebrate()</code> only when the numbers line up. Try changing one board's secret and watch what happens.</p>
+			<p class="mt-1 text-(--color-night-soft)">💡 For a guessing game, see YourTurn challenge #2 — randomise <code>MY_SECRET</code> on shake and keep tapping A until both boards agree by chance.</p>
 		</div>
 	</div>
 

@@ -9,6 +9,7 @@
 	import { markVisited, markCompleted } from '$lib/stores/progress';
 	import { setMood } from '$lib/stores/ducky';
 	import { connection } from '$lib/stores/connection';
+	import { petLabel } from '$lib/stores/pet';
 	import type { Component } from 'svelte';
 
 	let { data } = $props();
@@ -147,7 +148,7 @@
 					{#if mission.preset}
 						<FlashButton preset={mission.preset} onFlashed={complete} />
 					{:else if mission.level === 1}
-						<FlashButton label="Start Ducky" flashedLabel="Ducky is ready!" />
+						<FlashButton label="Start {$petLabel}" flashedLabel="{$petLabel} is ready!" />
 					{/if}
 					{#if nextMission}
 						<a
