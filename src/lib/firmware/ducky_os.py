@@ -62,6 +62,7 @@ NOTE_FREQ = {
 }
 
 # --- On-board menu ---
+# L0-MENU-ONLY:BEGIN
 PRESET_LIST = (
     'heartbeat', 'tap-wake', 'shake', 'hide-peek',
     'whisper', 'touch-logo', 'compass-quest',
@@ -79,14 +80,15 @@ MENU_ICONS = {
     'compass-quest': Image("00900:09990:90909:00900:00900"),
     'sky-radar':     Image("00900:09090:90009:09090:00900"),
     'iss-orbit':     Image("00900:09000:90009:00090:00900"),
-    'breathe':       Image("00000:09990:99999:09990:00000"),   # filled circle
-    'sunrise':       Image("00900:09990:99999:99999:99999"),   # sun rising
-    'dice':          Image("99999:90909:99999:90909:99999"),   # cube
-    'mood-badge':    Image("09090:00000:00000:90009:09990"),   # face
-    'bubble':        Image("09990:90009:90009:09990:00000"),   # bubble
-    'firefly':       Image("00000:00900:09090:00900:00000"),   # spark
-    'warm-cold':     Image("00900:09990:09090:09090:09990"),   # thermometer
+    'breathe':       Image("00000:09990:99999:09990:00000"),
+    'sunrise':       Image("00900:09990:99999:99999:99999"),
+    'dice':          Image("99999:90909:99999:90909:99999"),
+    'mood-badge':    Image("09090:00000:00000:90009:09990"),
+    'bubble':        Image("09990:90009:90009:09990:00000"),
+    'firefly':       Image("00000:00900:09090:00900:00000"),
+    'warm-cold':     Image("00900:09990:09090:09090:09990"),
 }
+# L0-MENU-ONLY:END
 
 # Precomputed integer compass spoke vectors for 8 directions (24px radius)
 # N, NE, E, SE, S, SW, W, NW — index matches ARROWS order
@@ -100,8 +102,10 @@ buf = b""
 last_sample = 0
 light_thresh = 50
 
-menu_mode = False    # True while navigating the on-board menu
-menu_idx = 0        # index into PRESET_LIST
+menu_mode = False
+# L0-MENU-ONLY:BEGIN
+menu_idx = 0
+# L0-MENU-ONLY:END
 
 # Long-press logo tracking
 logo_hold_start = 0
@@ -174,12 +178,11 @@ def _boot_anim(o):
     o.show()
     sleep(380)
 
+# L0-MENU-ONLY:BEGIN
 def _oled_show_menu(o):
     o.fill(0)
     name = PRESET_LIST[menu_idx]
     parts = name.split('-')
-    # big_text is 12 px wide per char; panel is 96 px so max 7 chars fit at x=2.
-    # Fall back to small text (6 px/char, 16 chars at x=2) for long words.
     if len(parts[0]) <= 7:
         o.big_text(parts[0], 2, 8, 15)
     else:
@@ -192,6 +195,7 @@ def _oled_show_menu(o):
     _draw_duck_small(o, 68, 2, 10)
     o.text('A<   >B', 22, 84, 6)
     o.show()
+# L0-MENU-ONLY:END
 
 # --- Helpers ---
 def parse_matrix(bits):
@@ -234,10 +238,12 @@ def bargraph(value, max_value):
     rows = ["99999" if (4 - r) < lit else "00000" for r in range(5)]
     return Image(":".join(rows))
 
+# L0-MENU-ONLY:BEGIN
 def show_menu():
     display.show(MENU_ICONS.get(PRESET_LIST[menu_idx], FACES['duck']))
     if oled:
         _oled_show_menu(oled)
+# L0-MENU-ONLY:END
 
 # --- Command handler ---
 def handle(line):
@@ -339,14 +345,19 @@ def handle(line):
     elif c == 'Q':
         preset = None
         state = {}
+        display.clear()
+        # L0-MENU-ONLY:BEGIN
         menu_mode = True
         show_menu()
+        # L0-MENU-ONLY:END
 
 # --- Per-preset device-side behaviour ---
 def tick():
     global preset, state
+    # L0-MENU-ONLY:BEGIN
     if menu_mode:
         return
+    # L0-MENU-ONLY:END
 
     n = running_time()
 
@@ -414,11 +425,6 @@ def tick():
                     oled.hline(2, 10 + i * 9, 10, 7)
                     oled.hline(84, 10 + i * 9, 10, 7)
             oled.show()
-
-    elif preset == 'cold-hands':
-        if n - state.get('t', 0) > 300:
-            state['t'] = n
-            display.show(bargraph(temperature() - 18, 14))
 
     elif preset == 'hide-peek':
         if n - state.get('t', 0) > 200:
@@ -515,9 +521,6 @@ def tick():
             d = dirs[idx]
             oled.big_text(d, 48 - len(d) * 6, 82, 15)
             oled.show()
-
-    elif preset == 'wave-across':
-        pass   # button + radio handlers below do the work
 
     elif preset == 'sky-radar':
         if n - state.get('t', 0) > 50:
@@ -832,8 +835,10 @@ if oled:
 else:
     sleep(1000)
 
+# L0-MENU-ONLY:BEGIN
 menu_mode = True
 show_menu()
+# L0-MENU-ONLY:END
 print('<L Ducky OS ready>')
 
 # --- Main loop ---
@@ -866,10 +871,12 @@ while True:
 
     # 4. Button events
     if button_a.was_pressed():
+        # L0-MENU-ONLY:BEGIN
         if menu_mode:
             menu_idx = (menu_idx - 1) % len(PRESET_LIST)
             show_menu()
-        else:
+        # L0-MENU-ONLY:END
+        if not menu_mode:
             print('<B A down>')
             if preset == 'mood-badge':
                 state['m'] = (state.get('m', 0) - 1) % 5
@@ -885,30 +892,25 @@ while True:
                         pass
                 sleep(150)
                 display.show(Image.ASLEEP)
-            elif preset == 'wave-across':
-                try:
-                    radio.send('w')
-                except:
-                    pass
-                display.show(FACES['wave'])
-                sleep(280)
-                display.clear()
 
     if button_b.was_pressed():
+        # L0-MENU-ONLY:BEGIN
         if menu_mode:
             menu_idx = (menu_idx + 1) % len(PRESET_LIST)
             show_menu()
-        else:
+        # L0-MENU-ONLY:END
+        if not menu_mode:
             print('<B B down>')
             if preset == 'mood-badge':
                 state['m'] = (state.get('m', 0) + 1) % 5
 
-    # 5. Logo touch — short tap = game action or menu select; long press ≥1.5s = menu
+    # 5. Logo touch — short tap = game action; long press ≥1.5s = menu (L0 only)
     try:
         touched = pin_logo.is_touched()
         if touched:
             if logo_hold_start == 0:
                 logo_hold_start = running_time()
+            # L0-MENU-ONLY:BEGIN
             elif not logo_held and running_time() - logo_hold_start >= 1500:
                 logo_held = True
                 try:
@@ -919,29 +921,31 @@ while True:
                 preset = None
                 state = {}
                 show_menu()
+            # L0-MENU-ONLY:END
         else:
             if logo_hold_start > 0 and not logo_held:
-                # Short tap released
+                # L0-MENU-ONLY:BEGIN
                 if menu_mode:
                     menu_mode = False
                     preset = PRESET_LIST[menu_idx]
                     state = {}
                     print('<L preset %s>' % preset)
-                elif preset == 'touch-logo':
-                    # Quack!
-                    music.pitch(1100, 70, wait=True)
-                    music.pitch(750, 90, wait=True)
-                    music.pitch(450, 120, wait=True)
-                    display.show(FACES['happy'])
-                    if oled:
-                        try:
-                            state['oq'] = running_time()
-                        except:
-                            pass
-                    sleep(250)
-                    display.show(FACES['duck'])
-                else:
-                    print('<T down>')
+                # L0-MENU-ONLY:END
+                if not menu_mode:
+                    if preset == 'touch-logo':
+                        music.pitch(1100, 70, wait=True)
+                        music.pitch(750, 90, wait=True)
+                        music.pitch(450, 120, wait=True)
+                        display.show(FACES['happy'])
+                        if oled:
+                            try:
+                                state['oq'] = running_time()
+                            except:
+                                pass
+                        sleep(250)
+                        display.show(FACES['duck'])
+                    else:
+                        print('<T down>')
             logo_hold_start = 0
             logo_held = False
     except:
@@ -951,9 +955,5 @@ while True:
     msg = radio.receive()
     if msg is not None:
         print('<R %s>' % msg)
-        if preset == 'wave-across' and msg == 'w':
-            display.show(FACES['wave'])
-            sleep(280)
-            display.clear()
 
     sleep(15)

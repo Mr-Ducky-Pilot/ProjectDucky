@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { connection } from '$lib/stores/connection';
 	import { setMood, say } from '$lib/stores/ducky';
-	import { buildDuckyHex } from '$lib/firmware/build';
+	import { buildL0PresetHex, buildL1Hex } from '$lib/firmware/build';
 	import { petLabel } from '$lib/stores/pet';
 
 	type Props = {
@@ -26,12 +26,13 @@
 	let booting = $state(false);
 	let localError = $state<string | null>(null);
 
+	// For L0 missions each preset gets its own firmware tag; L1 missions share 'l1'.
+	const firmwareTag = $derived(preset ? `l0:${preset}` : 'l1');
 	const alreadyLoaded = $derived(
-		$conn.status === 'connected' && $conn.lastFlashedFirmware === 'ducky-os'
+		$conn.status === 'connected' && $conn.lastFlashedFirmware === firmwareTag
 	);
 
 	async function activate() {
-		// Board is already running Ducky OS — skip the 30s flash, just send preset
 		booting = true;
 		try {
 			if (preset) {
@@ -66,7 +67,7 @@
 		building = true;
 		let hex: ArrayBuffer;
 		try {
-			hex = await buildDuckyHex();
+			hex = preset ? await buildL0PresetHex(preset) : await buildL1Hex();
 		} catch (err) {
 			localError = err instanceof Error ? err.message : 'Failed to build firmware.';
 			setMood('sad');
@@ -75,7 +76,7 @@
 		}
 		building = false;
 
-		await connection.flash(hex, 'ducky-os');
+		await connection.flash(hex, firmwareTag as 'l1' | `l0:${string}`);
 		const after = connection.getState();
 		if (after.status === 'error') {
 			localError = after.error;
@@ -83,10 +84,10 @@
 			return;
 		}
 
-		// Board resets after flash — wait for MicroPython to boot before sending commands
 		booting = true;
 		await connection.waitForReady();
 		booting = false;
+
 		if (preset) {
 			try {
 				await connection.send({ type: 'preset', name: preset });
@@ -94,7 +95,6 @@
 				// non-fatal
 			}
 		} else {
-			// L1 missions — clear display so Interactive takes over
 			try {
 				await connection.send({ type: 'matrix', bits: Array(25).fill(false) });
 			} catch {

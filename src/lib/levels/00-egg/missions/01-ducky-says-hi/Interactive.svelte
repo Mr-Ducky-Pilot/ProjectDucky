@@ -1,7 +1,7 @@
 <script lang="ts">
 	import LedMatrix from '$lib/components/LedMatrix.svelte';
 	import { connection } from '$lib/stores/connection';
-	import { buildDuckyHex } from '$lib/firmware/build';
+	import { buildL1Hex } from '$lib/firmware/build';
 	import { progress, setPlayerName } from '$lib/stores/progress';
 	import { FONT_3X5 } from '$lib/data/font3x5';
 	import { setMood, say } from '$lib/stores/ducky';
@@ -68,9 +68,11 @@
 				return;
 			}
 
-			// Flash firmware if not already done this session
-			const hex = await buildDuckyHex();
-			await connection.flash(hex);
+			// Flash L1 listener firmware if not already loaded
+			if (connection.getState().lastFlashedFirmware !== 'l1') {
+				const hex = await buildL1Hex();
+				await connection.flash(hex, 'l1');
+			}
 
 			if (connection.getState().status === 'error') {
 				errorMsg = connection.getState().error;

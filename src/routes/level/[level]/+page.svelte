@@ -55,7 +55,13 @@
 	);
 
 	const isDuckyLevel = $derived(data.level.id === 0 || data.level.id === 1);
-	const duckyReady = $derived($conn.lastFlashedFirmware === 'ducky-os' && $conn.status === 'connected');
+	// L1 shares one hex — ready once 'l1' is flashed. L0 has per-preset firmware; just check connected.
+	const duckyReady = $derived(
+		$conn.status === 'connected' &&
+		(data.level.id === 1
+			? $conn.lastFlashedFirmware === 'l1'
+			: $conn.lastFlashedFirmware !== null)
+	);
 
 	async function handleFlashed() {
 		if (data.level.id === 1) {
@@ -107,25 +113,45 @@
 				<div class="flex-1">
 					{#if duckyReady}
 						<p class="font-display font-extrabold" style="color: var(--color-leaf-deep)">
-							✅ {$petLabel} is ready — pick a mission!
+							✅ {$petLabel} is connected — pick a mission!
 						</p>
 						<p class="mt-1 text-sm text-(--color-night-soft)">
-							Switching missions is instant — no re-flashing needed.
-							{$petLabel} also works standalone: use A/B to browse activities, tap the logo to activate.
+							{#if data.level.id === 1}
+								Switching missions is instant — no re-flashing needed.
+							{:else}
+								Each mission flashes its own activity. Revisiting the same mission is instant.
+							{/if}
 						</p>
 					{:else}
 						<p class="font-display font-extrabold text-(--color-night-ink)">
-							Flash {$petLabel} once to get started
+							{#if data.level.id === 1}
+								Flash {$petLabel} once to get started
+							{:else}
+								Connect {$petLabel} to get started
+							{/if}
 						</p>
 						<p class="mt-1 text-sm text-(--color-night-soft)">
-							One flash loads all {data.level.id === 0 ? 'Level 0' : 'Level 1'} activities.
-							After that, switching missions is instant. {$petLabel} also works standalone without the computer.
+							{#if data.level.id === 1}
+								One flash loads all Level 1 activities. After that, switching missions is instant.
+							{:else}
+								Pick any mission — it will flash {$petLabel} with that activity automatically.
+							{/if}
 						</p>
 					{/if}
 				</div>
 				{#if !duckyReady}
 					<div class="shrink-0">
-						<FlashButton label="Flash {$petLabel}" flashedLabel="{$petLabel} is ready!" onFlashed={handleFlashed} />
+						{#if data.level.id === 1}
+							<FlashButton label="Flash {$petLabel}" flashedLabel="{$petLabel} is ready!" onFlashed={handleFlashed} />
+						{:else}
+							<button
+								type="button"
+								onclick={() => connection.connect()}
+								class="pop-btn pop-btn--yellow"
+							>
+								Connect {$petLabel}
+							</button>
+						{/if}
 					</div>
 				{/if}
 			</div>

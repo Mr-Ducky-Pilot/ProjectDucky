@@ -21,7 +21,7 @@ type ConnState = {
 	deviceSerial: string | null;
 	webusbSupported: boolean;
 	preferMock: boolean;
-	lastFlashedFirmware: 'ducky-os' | 'custom' | null;
+	lastFlashedFirmware: 'l1' | `l0:${string}` | 'custom' | null;
 };
 
 const initial: ConnState = {
@@ -129,7 +129,7 @@ export const connection = {
 		}));
 	},
 
-	async flash(source: FlashSource, firmware: 'ducky-os' | 'custom' = 'custom') {
+	async flash(source: FlashSource, firmware: 'l1' | `l0:${string}` | 'custom' = 'custom') {
 		const a = await ensureAdapter();
 		_store.update((s) => ({ ...s, status: 'flashing', flash: { phase: 'erasing', pct: 0 } }));
 		try {
