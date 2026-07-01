@@ -64,7 +64,6 @@
 			gainNode.gain.setTargetAtTime(0, audioCtx.currentTime + 0.2, 0.05);
 		}
 		void connection.send({ type: 'tone', sequence: [{ note: notes[idx], ms: 120 }] }).catch(() => {});
-		void connection.send({ type: 'oled-text', lines: ['Light Theremin', notes[idx]] }).catch(() => {});
 	});
 
 	onMount(() => {

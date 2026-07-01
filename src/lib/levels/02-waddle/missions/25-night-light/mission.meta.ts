@@ -16,8 +16,7 @@ const meta: MissionMeta = {
 	remixPrompts: [
 		'Try different tunes: ENTERTAINER, NYAN, or ODE.',
 		'Flash faster by changing sleep(200) to sleep(100).',
-		'Add display.scroll("DARK!") before the for loop.',
-		'OLED bonus: from ssd1327 import probe as op; oled=op() — show the current light level as a big number on the Grove display so you can calibrate your dark threshold.'
+		'Add display.scroll("DARK!") before the for loop.'
 	]
 };
 

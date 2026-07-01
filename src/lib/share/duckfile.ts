@@ -23,7 +23,7 @@ export type DuckShare =
 			version: 1;
 			type: 'storybook';
 			pet: Pet;
-			storybook: { scenes: Array<{ matrix: string; oledText?: string; tone?: string; ms: number }> };
+			storybook: { scenes: Array<{ matrix: string; tone?: string; ms: number }> };
 			exportedAt: number;
 	  };
 

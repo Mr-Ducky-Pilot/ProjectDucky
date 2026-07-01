@@ -38,12 +38,10 @@
 			if (playInterval) { clearInterval(playInterval); playInterval = null; }
 			// Stop animation on board
 			void connection.send({ type: 'quit' }).catch(() => {});
-			void connection.send({ type: 'oled-text', lines: ['Pixel Animator', 'Stopped'] }).catch(() => {});
 			return;
 		}
 		playing = true;
 		setMood('celebrating');
-		void connection.send({ type: 'oled-text', lines: ['Pixel Animator', 'Animating!', `${delay}ms/frame`] }).catch(() => {});
 		let f = 0;
 
 		async function sendFrame() {

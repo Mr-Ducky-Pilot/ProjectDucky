@@ -19,9 +19,6 @@
 		playing = true;
 		for (const p of panels) {
 			void connection.send({ type: 'matrix', bits: p.bits }).catch(() => {});
-			void connection
-				.send({ type: 'oled-text', lines: [p.caption || '...', ''] })
-				.catch(() => {});
 			await new Promise((r) => setTimeout(r, 1800));
 		}
 		playing = false;

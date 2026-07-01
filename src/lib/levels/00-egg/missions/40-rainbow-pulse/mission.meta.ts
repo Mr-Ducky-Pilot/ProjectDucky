@@ -9,7 +9,7 @@ const meta: MissionMeta = {
 	oneLiner: 'A glow that breathes in slow waves.',
 	story: 'Watch your duck inhale and exhale. Every pixel rides a sine wave — pure brightness, pure calm.',
 	duckyIntro: 'Match my pulse with your breathing. In… out… in…',
-	hardware: ['led-matrix', 'oled'],
+	hardware: ['led-matrix'],
 	pairMode: false,
 	preset: 'breathe',
 	dimension: 'art',

@@ -4,7 +4,13 @@
 	import YourTurn from '$lib/components/YourTurn.svelte';
 	import { connection } from '$lib/stores/connection';
 	import { setMood, say } from '$lib/stores/ducky';
+	import { MOOD_PALETTE } from '$lib/data/moodPalette';
 	import { onMount } from 'svelte';
+
+	function sendMoodRgb(mood: keyof typeof MOOD_PALETTE) {
+		const [r, g, b] = MOOD_PALETTE[mood].rgb;
+		void connection.send({ type: 'rgb', r, g, b }).catch(() => {});
+	}
 
 	let armed = $state(false);
 	let triggered = $state(false);
@@ -25,10 +31,10 @@
 		cooldown = true;
 		setMood('sad');
 		say('ALARM! 🔔', 'sad');
+		sendMoodRgb('sad');
 
 		// Flash alarm pattern + play siren on board
 		void connection.send({ type: 'matrix', bits: alarmBits }).catch(() => {});
-		void connection.send({ type: 'oled-text', lines: ['ALARM!', 'Sound detected!'] }).catch(() => {});
 		void connection.send({
 			type: 'tone',
 			sequence: [
@@ -42,12 +48,11 @@
 			triggered = false;
 			if (armed) {
 				void connection.send({ type: 'face', name: 'happy' }).catch(() => {});
-				void connection.send({ type: 'oled-text', lines: ['ARMED', 'Shh... quiet!', 'Stay still!'] }).catch(() => {});
 			} else {
 				void connection.send({ type: 'matrix', bits: clearBits }).catch(() => {});
-				void connection.send({ type: 'oled-text', lines: ['Sound Alarm', 'Disarmed'] }).catch(() => {});
 			}
 			setMood('idle');
+			sendMoodRgb('idle');
 			await new Promise((r) => setTimeout(r, 1500));
 			cooldown = false;
 		}, 2500);
@@ -61,11 +66,11 @@
 			setMood('curious');
 			say('Shh… I\'m listening 👂', 'curious');
 			void connection.send({ type: 'face', name: 'wink' }).catch(() => {});
-			void connection.send({ type: 'oled-text', lines: ['ARMED', 'Shh... quiet!', 'Stay still!'] }).catch(() => {});
+			sendMoodRgb('curious');
 		} else {
 			setMood('idle');
 			void connection.send({ type: 'matrix', bits: clearBits }).catch(() => {});
-			void connection.send({ type: 'oled-text', lines: ['Sound Alarm', 'Disarmed'] }).catch(() => {});
+			sendMoodRgb('idle');
 		}
 	}
 

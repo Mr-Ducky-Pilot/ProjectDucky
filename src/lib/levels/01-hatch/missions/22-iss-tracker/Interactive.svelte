@@ -1,6 +1,5 @@
 <script lang="ts">
 	import YourTurn from '$lib/components/YourTurn.svelte';
-	import { connection } from '$lib/stores/connection';
 	import { onMount } from 'svelte';
 
 	type IssData = {
@@ -155,25 +154,10 @@
 			trail = [...trail, { lat: data.latitude, lon: data.longitude }].slice(-40);
 			lastUpdate = new Date();
 			drawMap();
-			sendOledUpdate();
 		} catch (e) {
 			fetchError = e instanceof Error ? e.message : 'Fetch failed';
 		}
 		loading = false;
-	}
-
-	function sendOledUpdate() {
-		if (!issData) return;
-		const lat = issData.latitude >= 0
-			? `${issData.latitude.toFixed(1)}N`
-			: `${Math.abs(issData.latitude).toFixed(1)}S`;
-		const lon = issData.longitude >= 0
-			? `${issData.longitude.toFixed(1)}E`
-			: `${Math.abs(issData.longitude).toFixed(1)}W`;
-		void connection.send({
-			type: 'oled-text',
-			lines: ['ISS Live', `Lat: ${lat}`, `Lon: ${lon}`, `${Math.round(issData.altitude)} km up`]
-		}).catch(() => {});
 	}
 
 	onMount(() => {

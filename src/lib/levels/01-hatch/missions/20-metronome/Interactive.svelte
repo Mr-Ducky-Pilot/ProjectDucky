@@ -56,7 +56,6 @@
 		beat = false;
 		tick();
 		interval = setInterval(tick, Math.round(60000 / bpm));
-		void connection.send({ type: 'oled-text', lines: ['Metronome', `BPM: ${bpm}`, 'Running...'] }).catch(() => {});
 	}
 
 	function stop() {
@@ -64,7 +63,6 @@
 		if (interval) { clearInterval(interval); interval = null; }
 		beat = false;
 		void connection.send({ type: 'matrix', bits: Array(25).fill(false) }).catch(() => {});
-		void connection.send({ type: 'oled-text', lines: ['Metronome', `BPM: ${bpm}`, 'Stopped'] }).catch(() => {});
 	}
 
 	function toggle() {
@@ -72,9 +70,6 @@
 	}
 
 	function onBpmChange() {
-		if (!running) {
-			void connection.send({ type: 'oled-text', lines: ['Metronome', `BPM: ${bpm}`] }).catch(() => {});
-		}
 		if (running) { stop(); start(); }
 	}
 

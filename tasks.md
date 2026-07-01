@@ -14,7 +14,6 @@ Work plan for the Ducky STEM kit companion app.
 - ✅ Ducky OS universal-listener firmware (`src/lib/firmware/ducky_os.py`)
 - ✅ Dynamic hex assembly: runtime + Python bundled in-browser via `@microbit/microbit-fs`
 - ✅ Serial protocol working — commands browser→board, events board→browser
-- 🚧 Grove OLED 1.12" — deferred to V2 (hardware risk; 5×5 matrix only for MVP)
 
 ### M1 · App Shell & Routing
 - ✅ SvelteKit 2 + Svelte 5 runes + TypeScript + Tailwind v4

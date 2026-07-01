@@ -3,6 +3,7 @@
 	import { setMood, say } from '$lib/stores/ducky';
 	import { buildL0PresetHex, buildL1Hex } from '$lib/firmware/build';
 	import { petLabel } from '$lib/stores/pet';
+	import { MOOD_PALETTE } from '$lib/data/moodPalette';
 
 	type Props = {
 		preset?: string;
@@ -47,6 +48,8 @@
 		justFlashed = true;
 		setMood('celebrating');
 		say('Done — try it out!', 'celebrating');
+		const [r, g, b] = MOOD_PALETTE.celebrating.rgb;
+		void connection.send({ type: 'rgb', r, g, b }).catch(() => {});
 		onFlashed?.();
 		setTimeout(() => (justFlashed = false), 1800);
 	}
@@ -105,6 +108,8 @@
 		justFlashed = true;
 		setMood('celebrating');
 		say('Done — try it out!', 'celebrating');
+		const [r, g, b] = MOOD_PALETTE.celebrating.rgb;
+		void connection.send({ type: 'rgb', r, g, b }).catch(() => {});
 		onFlashed?.();
 		setTimeout(() => (justFlashed = false), 1800);
 	}

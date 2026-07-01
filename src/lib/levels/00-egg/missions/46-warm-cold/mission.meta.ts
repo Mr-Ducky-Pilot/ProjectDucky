@@ -9,7 +9,7 @@ const meta: MissionMeta = {
 	oneLiner: 'Your duck shows how warm the room is, right now.',
 	story: 'A thermometer that lives in your hand. Hold it near a radiator, near a window, near an ice cube — watch it react.',
 	duckyIntro: 'Where is it warmest in your home? Help me find out.',
-	hardware: ['temp', 'led-matrix', 'oled'],
+	hardware: ['temp', 'led-matrix'],
 	pairMode: false,
 	preset: 'warm-cold',
 	dimension: 'science',

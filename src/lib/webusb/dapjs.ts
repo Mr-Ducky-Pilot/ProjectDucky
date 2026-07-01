@@ -42,8 +42,13 @@ export function createDapAdapter(): DeviceAdapter & { meta?: DapAdapterMeta } {
 			serialBuffer = serialBuffer.slice(nl + 1);
 			if (!line) continue;
 			const event = decode(line);
-			if (event) emit(event);
-			else emit({ type: 'log', text: line });
+			if (event) {
+				if (event.type === 'log') console.log('[microbit]', event.text);
+				emit(event);
+			} else {
+				console.log('[microbit raw]', line);
+				emit({ type: 'log', text: line });
+			}
 		}
 	}
 

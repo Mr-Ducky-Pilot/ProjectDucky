@@ -35,6 +35,9 @@ export function createMockAdapter(): DeviceAdapter {
 				case 'temp':
 					values = [22 + Math.sin(t / 9) * 1.4];
 					break;
+				case 'ambient-temp':
+					values = [20 + Math.sin(t / 11) * 2.1];
+					break;
 				case 'compass':
 					values = [(t * 30) % 360];
 					break;
@@ -86,21 +89,6 @@ export function createMockAdapter(): DeviceAdapter {
 		async send(command: OutgoingCommand) {
 			// echo back as a log so devs can see the wire traffic in /dev/components
 			emit({ type: 'log', text: `→ ${command.type}` });
-			if (command.type === 'oled-text') {
-				emit({ type: 'log', text: `OLED: ${command.lines.join(' | ')}` });
-			}
-			if (command.type === 'oled-clear') {
-				emit({ type: 'log', text: 'OLED: cleared' });
-			}
-			if (command.type === 'oled-radar') {
-				emit({ type: 'log', text: `OLED radar: ${command.planeCount} planes, ${command.blips.length} blips` });
-			}
-			if (command.type === 'oled-pixels') {
-				emit({ type: 'log', text: `OLED pixels: ${command.pixels.length}` });
-			}
-			if (command.type === 'oled-line') {
-				emit({ type: 'log', text: `OLED line: (${command.x1},${command.y1})→(${command.x2},${command.y2})` });
-			}
 			if (command.type === 'subscribe') {
 				subs.add(command.sensor);
 				startStream(command.sensor);

@@ -63,15 +63,6 @@
 			: $conn.lastFlashedFirmware !== null)
 	);
 
-	async function handleFlashed() {
-		if (data.level.id === 1) {
-			try {
-				await connection.send({ type: 'oled-text', lines: ['Level 1 - Hatch', 'Pick a mission!'] });
-			} catch {
-				// non-fatal: OLED might not be connected
-			}
-		}
-	}
 </script>
 
 <section class="px-5 py-8 sm:py-12">
@@ -142,7 +133,7 @@
 				{#if !duckyReady}
 					<div class="shrink-0">
 						{#if data.level.id === 1}
-							<FlashButton label="Flash {$petLabel}" flashedLabel="{$petLabel} is ready!" onFlashed={handleFlashed} />
+							<FlashButton label="Flash {$petLabel}" flashedLabel="{$petLabel} is ready!" />
 						{:else}
 							<button
 								type="button"

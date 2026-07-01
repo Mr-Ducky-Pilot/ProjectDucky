@@ -16,8 +16,7 @@ const meta: MissionMeta = {
 	remixPrompts: [
 		'Make the wobble limit stricter (lower number) to make it harder.',
 		'Display the streak number instead of a face.',
-		'Show a different image for a new personal best.',
-		'OLED bonus: from ssd1327 import probe as op; oled=op() — show the streak count and "STEADY!" or "WOBBLE!" in big_text so you can read it without looking at the chip.'
+		'Show a different image for a new personal best.'
 	]
 };
 

@@ -9,7 +9,7 @@ const meta: MissionMeta = {
 	oneLiner: 'Shake your duck to roll a six-sided die.',
 	story: 'A real die, sitting in your hand. Shake it, hear the click, see the pips appear. Use it in any game you play.',
 	duckyIntro: 'Shake me hard and I\'ll roll for you!',
-	hardware: ['accel', 'led-matrix', 'speaker', 'oled'],
+	hardware: ['accel', 'led-matrix', 'speaker'],
 	pairMode: false,
 	preset: 'dice',
 	dimension: 'movement',

@@ -3,7 +3,6 @@
 
 	const specs = [
 		['mcu', '2 × micro:bit v2 (nRF52833)'],
-		['display', '2 × Grove OLED 1.12" — 96×96 px'],
 		['matrix', '5 × 5 LED grid, per board'],
 		['radio', '2.4 GHz, ducks talk to ducks'],
 		['serial', '115200 baud over WebUSB'],

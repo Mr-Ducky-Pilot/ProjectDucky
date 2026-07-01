@@ -4,7 +4,6 @@
 async function play() {
     for (const panel of panels) {
         await connection.send({ type: 'matrix', bits: panel.bits });
-        await connection.send({ type: 'oled-text', lines: [panel.caption] });
         await sleep(1800);
     }
 }

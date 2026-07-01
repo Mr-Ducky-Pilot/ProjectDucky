@@ -16,8 +16,7 @@ const meta: MissionMeta = {
 	remixPrompts: [
 		'Change the faces to ANGRY, ASLEEP, or CONFUSED.',
 		'Add a fourth face for "freezing" (below 15°C).',
-		'Print the actual temperature number instead of a face.',
-		'OLED bonus: from ssd1327 import probe as op; oled=op() — show the mood word ("HAPPY", "COLD") in big_text on the Grove display instead of just the LED face.'
+		'Print the actual temperature number instead of a face.'
 	]
 };
 

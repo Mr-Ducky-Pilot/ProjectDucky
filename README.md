@@ -2,7 +2,7 @@
 
 > *Two devices. One friendship. Infinite ideas.*
 
-**Ducky** is a free, browser-based, open-ended learning kit that uses two `Micro:bit v2` + `Grove OLED 1.12"` to get kids aged 10–18 (8+ stretch) genuinely excited about STEM. Through play, pairs, sensors, and progressive coding mastery — guided by **Ducky**, a friendly duck companion who lives in the browser.
+**Ducky** is a free, browser-based, open-ended learning kit that uses two `Micro:bit v2` boards to get kids aged 10–18 (8+ stretch) genuinely excited about STEM. Through play, pairs, sensors, and progressive coding mastery — guided by **Ducky**, a friendly duck companion who lives in the browser.
 
 This repo is the source for the **Ducky web app** and supporting content (mission cards, packaging mockups, character assets).
 
@@ -48,7 +48,6 @@ A web app that runs in Chrome/Edge, with no install, that:
 |---|---|---|
 | Device I/O | **DAPjs** (`WebUSB`) | Industry standard for Micro:bit |
 | Editor | **MakeCode iframe embed** | `postMessage` API, avoids reinventing block editor |
-| OLED | `microbit-grove-oled` (community lib) | Needs validation in M0 |
 | Storage | `localStorage` (MVP) | No backend at MVP |
 | Hosting | **Vercel**  | Free tier sufficient |
 
@@ -76,12 +75,10 @@ A web app that runs in Chrome/Edge, with no install, that:
 ↓ USB
 ┌───────────────┐
 │  Micro:bit v2 │
-│  + Grove OLED │
 └───────────────┘
 ↕ 2.4 GHz radio
 ┌───────────────┐
 │  Micro:bit v2 │
-│  + Grove OLED │
 └───────────────┘
 
 **Why hybrid (not from scratch, not full fork):**
@@ -99,8 +96,6 @@ A web app that runs in Chrome/Edge, with no install, that:
 | Item | Qty | Notes |
 |---|---|---|
 | Micro:bit v2 | 2 | nRF52833, BLE, mic, speaker, accelerometer, compass, temp, light |
-| Grove OLED 1.12" | 2 | 96×96, I2C, SH1107 driver |
-| Grove Shield for Micro:bit v2 | 2 | Breakouts I2C and Grove ports |
 | Battery pack (3×AAA) | 2 | Portable power |
 | USB-A → Micro-USB cable | 2 | Programming + power |
 | Mission cards (printed) | 1 set | Tangible prompts |
@@ -130,7 +125,7 @@ The quick-start card explicitly directs users to Chrome.
 ---
 
 ### Hardware Smoke Test
-Before doing app work, run the M0 hardware validation (see `tasks.md` → Module 0). It produces a single `.hex` proving OLED + radio + sensors work end-to-end, which de-risks everything downstream.
+Before doing app work, run the M0 hardware validation (see `tasks.md` → Module 0). It produces a single `.hex` proving radio + sensors work end-to-end, which de-risks everything downstream.
 
 ---
 
@@ -144,5 +139,4 @@ TBD — leaning **MIT** (matches Micro:bit + MakeCode ethos).
 
 - The [micro:bit Educational Foundation](https://microbit.org/) for genuinely great hardware
 - The [Microsoft MakeCode](https://makecode.com/) team for an editor we can build on
-- [Seeed Studio](https://www.seeedstudio.com/) for the Grove ecosystem
 - Mitchel Resnick & the Lifelong Kindergarten group at MIT — their *low floor, wide walls, high ceiling* framing is the philosophical spine of this project

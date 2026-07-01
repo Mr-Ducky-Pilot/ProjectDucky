@@ -49,7 +49,6 @@ dimensions: art · music · science · wellbeing · movement · story · pet · 
 | 20 | `20-metronome` | Metronome | music |
 | 21 | `21-flight-radar` | Flight Radar | science |
 | 22 | `22-iss-tracker` | ISS Tracker | science |
-| **23** | `23-oled-doodle` | OLED Doodle | art |
 | **24** | `24-drum-pad` | Drum Pad | music |
 | **25** | `25-emotion-radio-badge` | Emotion Radio | story (pair) |
 | **26** | `26-temperature-logger` | Temperature Logger | science |
@@ -161,17 +160,14 @@ P:heartbeat                  <T up>
 L:80                         <R 42>      (numeric)
 R:42                         <R PING|XYZABC>   (string)
 R:HELLO|XYZABC               <L Ducky OS ready>
-O:line1|line2                <L D light 1230 80>  (data-log)
-O:clear
-O:px:x,y,c;x,y,c;…           (batch pixels)
-O:ln:x1,y1,x2,y2,c           (line)
-O:radar:count;dx,dy;…
+C:255,180,20                 <L D light 1230 80>  (data-log)
+A:HELLO
 Q
 ```
 
 ## Sensor Labels (hardware field in mission.meta.ts)
 
-`led-matrix` · `oled` · `mic` · `speaker` · `accel` · `compass` · `temp` · `light` · `buttons` · `logo-touch` · `radio` · `output`
+`led-matrix` · `mic` · `speaker` · `accel` · `compass` · `temp` · `ambient-temp` · `rgb-led` · `light` · `buttons` · `logo-touch` · `radio` · `output`
 
 ## Dimension tags (NEW)
 

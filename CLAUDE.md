@@ -7,7 +7,7 @@ Read it at the start of every session before touching any code.
 
 ## What We're Building
 
-**Ducky** — an open-source STEM kit for kids aged 10–18. Two micro:bit v2 boards + Grove OLED 1.12" displays. A browser companion app (SvelteKit) guides kids through a 6-level "duck lifecycle":
+**Ducky** — an open-source STEM kit for kids aged 10–18. Two micro:bit v2 boards. A browser companion app (SvelteKit) guides kids through a 6-level "duck lifecycle":
 
 ```
 🥚 Egg (L0) → 🐣 Hatch (L1) → 🐥 Waddle (L2) → 🦆 Swim (L3) → 🪶 Feather (L4) → 🌟 Soar (L5)
@@ -25,7 +25,7 @@ Levels 2+ add MakeCode block coding, then JavaScript/MicroPython.
 | Frontend | SvelteKit 2 + Svelte 5 (runes mode) + TypeScript |
 | Styling | Tailwind v4 (`@theme` tokens in `src/app.css`) |
 | Package manager | **npm** |
-| Hardware | micro:bit v2, Grove OLED 1.12" |
+| Hardware | micro:bit v2 |
 | USB | DAPjs + WebUSB (Chrome/Edge only) |
 | Firmware | MicroPython V2.1.1 + `@microbit/microbit-fs` for dynamic hex assembly |
 
@@ -90,6 +90,8 @@ Single line-delimited ASCII protocol over USB serial (115200 baud).
 | `preset` | `P:heartbeat` | Activate a named behaviour preset |
 | `light-threshold` | `L:80` | Update hide-peek light threshold live |
 | `radio-send` | `R:1` | Broadcast a radio packet |
+| `rgb` | `C:255,180,20` | Set external Grove RGB LED colour (0-255 each) |
+| `sound` | `A:HELLO` | Play a built-in expressive sound (`audio.play(Sound.NAME)`) |
 | `quit` | `Q` | Stop current preset, return to on-board menu |
 
 ### Board → Browser
@@ -134,6 +136,7 @@ Single universal-listener Python script. Key behaviours:
 | `whisper` | 07 | Mic bargraph on LED matrix | sound burst |
 | `touch-logo` | 08 | 3-note descending quack + happy face on logo touch | duck |
 | `compass-quest` | 09 | 8-direction arrow on LED matrix | N arrow |
+| `ambient-temp` | 47 | Bargraph from external Grove thermistor (P1) | thermometer |
 
 ---
 
@@ -350,10 +353,8 @@ edit + QR share), `/friends` (radio-met ducks), `/gallery` (full collection).
 `40-radio-pet-meet` (HELLO/INFO/ACK).
 
 **Firmware additions** (`ducky_os.py`): new presets `breathe`, `sunrise`,
-`dice`, `mood-badge`, `bubble`, `firefly`, `warm-cold`. New protocol
-sub-commands `O:px:` (batch pixels) and `O:ln:` (line). Radio events now
-carry both numeric and string payloads. Combined firmware = ~41KB
-(well under micro:bit v2's ~80KB user budget).
+`dice`, `mood-badge`, `bubble`, `firefly`, `warm-cold`. Radio events now
+carry both numeric and string payloads.
 
 **Dimension tags:** `MissionMeta.dimension` (single primary) and `dimensions`
 (secondary). Level pages show filter chips, mission cards show a colored
@@ -378,6 +379,5 @@ when all missions in a level are done, dimension filter chips.
 ### Level 5 — Soar (Open MicroPython sandbox, planned)
 
 ### Deferred
-- OLED display integration (hardware risk, V2)
 - Real Ducky illustrations (SVG placeholders ship now)
 - Backend / accounts / sharing (V2 backlog)

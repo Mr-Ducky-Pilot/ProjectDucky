@@ -102,27 +102,10 @@
 				.slice(0, 60);
 
 			lastUpdate = new Date();
-			sendOledUpdate();
 		} catch (e) {
 			fetchError = e instanceof Error ? e.message : 'Fetch failed';
 		}
 		loading = false;
-	}
-
-	// Scale browser radar coords (R_PX=148) to OLED radar coords (r=38)
-	const OLED_SCALE = 38 / 148;
-
-	function sendOledUpdate() {
-		if (planes.length === 0) {
-			void connection.send({ type: 'oled-text', lines: ['Flight Radar', 'No planes', airport.code, 'in range'] }).catch(() => {});
-			return;
-		}
-		// Send graphical radar blips to OLED
-		const blips = planes.slice(0, 15).map((p) => ({
-			dx: Math.round(p.dx * OLED_SCALE),
-			dy: Math.round(p.dy * OLED_SCALE)
-		}));
-		void connection.send({ type: 'oled-radar', planeCount: planes.length, blips }).catch(() => {});
 	}
 
 	// ── Canvas drawing ────────────────────────────────────────────────────────

@@ -5,6 +5,12 @@
 	import { progress, setPlayerName } from '$lib/stores/progress';
 	import { FONT_3X5 } from '$lib/data/font3x5';
 	import { setMood, say } from '$lib/stores/ducky';
+	import { MOOD_PALETTE } from '$lib/data/moodPalette';
+
+	function sendMoodRgb(mood: keyof typeof MOOD_PALETTE) {
+		const [r, g, b] = MOOD_PALETTE[mood].rgb;
+		void connection.send({ type: 'rgb', r, g, b }).catch(() => {});
+	}
 
 	type Props = { complete: () => void };
 	let { complete }: Props = $props();
@@ -90,10 +96,12 @@
 			sent = true;
 			setMood('celebrating');
 			say(`Hi ${name}! 👋`, 'celebrating');
+			sendMoodRgb('celebrating');
 			complete();
 		} catch (err) {
 			errorMsg = err instanceof Error ? err.message : String(err);
 			setMood('sad');
+			sendMoodRgb('sad');
 		} finally {
 			sending = false;
 		}

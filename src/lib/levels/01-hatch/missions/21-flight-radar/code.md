@@ -64,21 +64,3 @@ const dy = -fraction * R_pixels * Math.cos(ang);  // North is -y (canvas flipped
 ```
 
 This is the exact same navigation maths that pilots and ship navigators use — and now you understand it!
-
-## Sending the OLED summary
-
-When Ducky is connected, the browser sends a text summary to the OLED display every refresh:
-
-```javascript
-connection.send({
-  type: 'oled-text',
-  lines: [
-    `${planes.length} planes near`,
-    airport.code,
-    nearest.callsign,
-    `${Math.round(nearest.altFt / 1000)}k ft · ${Math.round(nearest.distKm)}km`
-  ]
-});
-```
-
-The `O:` command in the firmware draws these four lines on the 96×96 OLED screen with the little duck mascot in the corner.

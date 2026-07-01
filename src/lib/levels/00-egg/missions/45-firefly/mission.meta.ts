@@ -9,7 +9,7 @@ const meta: MissionMeta = {
 	oneLiner: 'A single glowing pixel that drifts when you tilt.',
 	story: 'Imagine a tiny firefly trapped in your duck. Tip the chip and it slides — gently, never panicking.',
 	duckyIntro: 'There\'s a firefly inside me. Tilt to herd it.',
-	hardware: ['accel', 'led-matrix', 'oled'],
+	hardware: ['accel', 'led-matrix'],
 	pairMode: false,
 	preset: 'firefly',
 	dimension: 'art',

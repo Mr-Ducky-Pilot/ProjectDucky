@@ -17,7 +17,7 @@ import music
 
 NAME = "${name}"
 
-# Each scene: (image, caption_for_oled, music_notes, hold_ms)
+# Each scene: (image, caption, music_notes, hold_ms)
 SCENES = [
     (Image.HAPPY,     "Once upon",   ['C4:4'],            1500),
     (Image.HEART,     "a duck",      ['E4:4','G4:4'],     1500),

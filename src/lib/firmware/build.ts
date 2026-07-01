@@ -1,6 +1,5 @@
 import { MicropythonFsHex } from '@microbit/microbit-fs';
 import duckyOsSource from './ducky_os.py?raw';
-import ssd1327Source from './ssd1327.py?raw';
 
 const RUNTIME_URL = '/firmware/micropython-v2.hex';
 const FS_BUDGET = 20480;
@@ -100,21 +99,37 @@ function extractPresetBranch(src: string, name: string): string {
 	return body.join('\n');
 }
 
-async function buildHex(main: string): Promise<ArrayBuffer> {
+/**
+ * Write `main` into a fresh filesystem, enforce FS_BUDGET, and assemble the hex.
+ * `tooLarge` builds the caller-specific error message when the budget is exceeded.
+ * On success in dev mode, logs the byte count so budget regressions are visible
+ * immediately instead of discovered via an emergency fix commit.
+ */
+async function assemble(
+	main: string,
+	tooLarge: (used: number, over: number) => string
+): Promise<ArrayBuffer> {
 	const runtime = await fetchRuntime();
 	const fs = new MicropythonFsHex(runtime);
 	fs.write('main.py', main);
-	fs.write('ssd1327.py', ssd1327Source);
 	const used = fs.getStorageUsed();
 	if (used > FS_BUDGET) {
-		throw new Error(
-			`Firmware too large: ${used} bytes used, budget is ${FS_BUDGET} bytes. ` +
-			`Over by ${used - FS_BUDGET} bytes.`
-		);
+		throw new Error(tooLarge(used, used - FS_BUDGET));
+	}
+	if (import.meta.env.DEV) {
+		const pct = ((used / FS_BUDGET) * 100).toFixed(1);
+		console.info(`[ducky-fs] ${used}/${FS_BUDGET} bytes (${pct}%) — ${FS_BUDGET - used} bytes free`);
 	}
 	const hexString = fs.getIntelHex();
 	const encoder = new TextEncoder();
 	return encoder.encode(hexString).buffer as ArrayBuffer;
+}
+
+async function buildHex(main: string): Promise<ArrayBuffer> {
+	return assemble(
+		main,
+		(used, over) => `Firmware too large: ${used} bytes used, budget is ${FS_BUDGET} bytes. Over by ${over} bytes.`
+	);
 }
 
 // L1 hex is shared across all Level 1 missions — cache it.
@@ -122,7 +137,7 @@ let l1HexCache: ArrayBuffer | null = null;
 
 /**
  * Build the Level 1 listener firmware.
- * No presets, no on-board menu. Browser sends M:/N:/F:/T:/S?/S!/R:/O: commands directly.
+ * No presets, no on-board menu. Browser sends M:/N:/F:/T:/S?/S!/R: commands directly.
  */
 export async function buildL1Hex(): Promise<ArrayBuffer> {
 	if (l1HexCache) return l1HexCache;
@@ -172,18 +187,10 @@ export function invalidateHexCache(): void {
  * Not cached — user code changes on every call.
  */
 export async function buildCustomHex(source: string): Promise<ArrayBuffer> {
-	const runtime = await fetchRuntime();
-	const fs = new MicropythonFsHex(runtime);
-	fs.write('main.py', source);
-	fs.write('ssd1327.py', ssd1327Source);
-	const used = fs.getStorageUsed();
-	if (used > FS_BUDGET) {
-		throw new Error(
+	return assemble(
+		source,
+		(used) =>
 			`Your code is too long to fit on the micro:bit (${used} bytes, limit is ${FS_BUDGET}). ` +
 			`Try shortening your code or removing unused variables.`
-		);
-	}
-	const hexString = fs.getIntelHex();
-	const encoder = new TextEncoder();
-	return encoder.encode(hexString).buffer as ArrayBuffer;
+	);
 }

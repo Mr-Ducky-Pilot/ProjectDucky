@@ -11,6 +11,8 @@
  *   S!accel\n                           unsubscribe
  *   P:welcome-jingle\n                  trigger a stored mini-program
  *   R:42\n                              radio: send number on channel
+ *   C:255,180,20\n                      set RGB LED colour (0-255 each)
+ *   A:HELLO\n                           play a built-in expressive sound
  *
  * The device pushes events the same way:
  *
@@ -25,26 +27,37 @@ export type Sensor =
 	| 'mic'
 	| 'light'
 	| 'temp'
+	| 'ambient-temp'
 	| 'compass'
 	| 'buttons'
 	| 'logo-touch'
 	| 'radio';
+
+/** Built-in micro:bit v2 expressive sounds, played via audio.play(Sound.NAME). */
+export type SoundName =
+	| 'GIGGLE'
+	| 'HAPPY'
+	| 'HELLO'
+	| 'MYSTERIOUS'
+	| 'SAD'
+	| 'SLIDE'
+	| 'SOARING'
+	| 'SPRING'
+	| 'TWINKLE'
+	| 'YAWN';
 
 export type OutgoingCommand =
 	| { type: 'matrix'; bits: boolean[] /* length 25 */ }
 	| { type: 'scroll'; text: string }
 	| { type: 'face'; name: 'happy' | 'sad' | 'wink' | 'wave' | 'sleep' }
 	| { type: 'tone'; sequence: { note: string; ms: number }[] }
+	| { type: 'rgb'; r: number; g: number; b: number }
+	| { type: 'sound'; name: SoundName }
 	| { type: 'subscribe'; sensor: Sensor }
 	| { type: 'unsubscribe'; sensor: Sensor }
 	| { type: 'preset'; name: string }
 	| { type: 'light-threshold'; value: number }
 	| { type: 'radio-send'; payload: number | string }
-	| { type: 'oled-text'; lines: string[] /* 1–4 lines, joined by | on the wire */ }
-	| { type: 'oled-clear' }
-	| { type: 'oled-radar'; planeCount: number; blips: Array<{ dx: number; dy: number }> }
-	| { type: 'oled-pixels'; pixels: Array<{ x: number; y: number; c: number }> }
-	| { type: 'oled-line'; x1: number; y1: number; x2: number; y2: number; c: number }
 	| { type: 'quit' };
 
 export type IncomingEvent =
@@ -74,16 +87,10 @@ export function encode(cmd: OutgoingCommand): string {
 			return 'L:' + cmd.value + '\n';
 		case 'radio-send':
 			return 'R:' + cmd.payload + '\n';
-		case 'oled-text':
-			return 'O:' + cmd.lines.join('|') + '\n';
-		case 'oled-clear':
-			return 'O:clear\n';
-		case 'oled-radar':
-			return 'O:radar:' + cmd.planeCount + ';' + cmd.blips.map((b) => `${b.dx},${b.dy}`).join(';') + '\n';
-		case 'oled-pixels':
-			return 'O:px:' + cmd.pixels.map((p) => `${p.x},${p.y},${p.c}`).join(';') + '\n';
-		case 'oled-line':
-			return `O:ln:${cmd.x1},${cmd.y1},${cmd.x2},${cmd.y2},${cmd.c}\n`;
+		case 'rgb':
+			return 'C:' + cmd.r + ',' + cmd.g + ',' + cmd.b + '\n';
+		case 'sound':
+			return 'A:' + cmd.name + '\n';
 		case 'quit':
 			return 'Q\n';
 	}

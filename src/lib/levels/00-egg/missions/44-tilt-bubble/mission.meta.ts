@@ -9,7 +9,7 @@ const meta: MissionMeta = {
 	oneLiner: 'Tilt your duck — a bubble floats to the highest corner.',
 	story: 'It\'s a real bubble level. Tilt left, bubble drifts right. Tilt down, bubble drifts up. Like the one in a carpenter\'s ruler.',
 	duckyIntro: 'Tilt me any way you like — watch where the bubble lands.',
-	hardware: ['accel', 'led-matrix', 'oled'],
+	hardware: ['accel', 'led-matrix'],
 	pairMode: false,
 	preset: 'bubble',
 	dimension: 'movement',

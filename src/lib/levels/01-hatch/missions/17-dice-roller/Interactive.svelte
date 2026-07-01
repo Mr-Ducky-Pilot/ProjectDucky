@@ -3,7 +3,13 @@
 	import YourTurn from '$lib/components/YourTurn.svelte';
 	import { connection } from '$lib/stores/connection';
 	import { setMood } from '$lib/stores/ducky';
+	import { MOOD_PALETTE } from '$lib/data/moodPalette';
 	import { onMount } from 'svelte';
+
+	function sendMoodRgb(mood: keyof typeof MOOD_PALETTE) {
+		const [r, g, b] = MOOD_PALETTE[mood].rgb;
+		void connection.send({ type: 'rgb', r, g, b }).catch(() => {});
+	}
 
 	// Standard dice dot patterns (5×5 grid)
 	const DICE_BITS: Record<number, string> = {
@@ -30,6 +36,7 @@
 		if (rolling) return;
 		rolling = true;
 		setMood('excited');
+		sendMoodRgb('excited');
 
 		// Quick shuffle animation
 		for (let i = 0; i < 5; i++) {
@@ -45,9 +52,9 @@
 		history = [r, ...history].slice(0, 8);
 
 		void connection.send({ type: 'matrix', bits: DICE_BITS[r].split('').map((c) => c === '1') }).catch(() => {});
-		void connection.send({ type: 'oled-text', lines: ['Dice Roller', `Rolled: ${r}`, diceEmoji[r]] }).catch(() => {});
 		setMood('celebrating');
-		setTimeout(() => { rolling = false; setMood('idle'); }, 600);
+		sendMoodRgb('celebrating');
+		setTimeout(() => { rolling = false; setMood('idle'); sendMoodRgb('idle'); }, 600);
 	}
 
 	// Detect shake from accel stream

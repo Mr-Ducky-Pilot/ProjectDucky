@@ -2,12 +2,13 @@ import type { Component } from 'svelte';
 
 export type Sensor =
 	| 'led-matrix'
-	| 'oled'
 	| 'mic'
 	| 'speaker'
 	| 'accel'
 	| 'compass'
 	| 'temp'
+	| 'ambient-temp'
+	| 'rgb-led'
 	| 'light'
 	| 'buttons'
 	| 'logo-touch'

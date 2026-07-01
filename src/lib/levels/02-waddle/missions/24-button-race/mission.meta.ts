@@ -16,8 +16,7 @@ const meta: MissionMeta = {
 	remixPrompts: [
 		'Set a really high WIN number like 50 for a long race.',
 		'Change the win message to something funny.',
-		'Add a display.scroll at the start to count down: "3", "2", "1", "GO!"',
-		'OLED bonus: from ssd1327 import probe as op; oled=op() — show both scores side-by-side on the Grove display so spectators can follow the race!'
+		'Add a display.scroll at the start to count down: "3", "2", "1", "GO!"'
 	]
 };
 

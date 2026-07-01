@@ -9,7 +9,7 @@ const meta: MissionMeta = {
 	oneLiner: 'Your duck wakes up with the light in the room.',
 	story: 'Cover Ducky with your hand — it dims. Hold it to a window — it fills. The chip is reading sunlight in real time.',
 	duckyIntro: 'How bright is your room? Let me show you.',
-	hardware: ['light', 'led-matrix', 'oled'],
+	hardware: ['light', 'led-matrix'],
 	pairMode: false,
 	preset: 'sunrise',
 	dimension: 'wellbeing',

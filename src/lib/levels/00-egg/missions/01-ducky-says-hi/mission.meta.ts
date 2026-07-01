@@ -9,7 +9,7 @@ const meta: MissionMeta = {
 	oneLiner: 'Type your name. Watch it scroll across the chip.',
 	story: 'Your duck doesn’t know your name yet. Tell it once — it’ll remember.',
 	duckyIntro: 'Tell me what to call you and I’ll wave it back at you.',
-	hardware: ['led-matrix', 'oled', 'speaker'],
+	hardware: ['led-matrix', 'speaker'],
 	pairMode: false,
 	dimension: 'art',
 	estMinutes: 3,
