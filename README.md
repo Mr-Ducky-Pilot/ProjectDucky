@@ -119,13 +119,9 @@ The quick-start card explicitly directs users to Chrome.
 
 - **Notion: Project Plan** — full project overview, philosophy, levels, story cards, risks, test plan
 - **Notion: Mission Library** — 28+ early missions with sensor field guide, what-if prompts, discovery activities, remix challenges
-- **`docs/mission-library.md`** *(planned)* — repo-side mirror once content stabilises
+- **`docs/mission-library.md`** — full catalog of all 78 missions across all 6 levels, generated from `mission.meta.ts`
 - **`tasks.md`** — modular work plan with task checklists
 
----
-
-### Hardware Smoke Test
-Before doing app work, run the M0 hardware validation (see `tasks.md` → Module 0). It produces a single `.hex` proving radio + sensors work end-to-end, which de-risks everything downstream.
 
 ---
 
