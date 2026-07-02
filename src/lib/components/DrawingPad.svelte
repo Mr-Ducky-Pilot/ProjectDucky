@@ -39,15 +39,16 @@
 		onchange(Array(25).fill(true));
 	}
 	function invert() {
-		onchange(bits.map((b) => !b));
+		// Guard against a short/undefined bits array (shouldn't happen with the
+		// fixed 25-cell grid, but keeps this safe regardless of caller input).
+		onchange(Array.from({ length: 25 }, (_, i) => !bits[i]));
 	}
 
 	const presets: Record<string, string> = {
 		Heart: '0101011111111110111000100',
 		Smile: '0000010001000001000101110',
 		Arrow: '0010001110111110010000100',
-		Square: '1111110001100011000111111',
-		Wave: '0000000100101001010001000'
+		Square: '1111110001100011000111111'
 	};
 	function applyPreset(name: string) {
 		onchange(presets[name].split('').map((c) => c === '1'));

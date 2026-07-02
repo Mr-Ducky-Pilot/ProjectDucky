@@ -50,56 +50,6 @@ function stripMenuOnlyRegions(src: string): string {
 }
 
 /**
- * Replace the entire body of tick() with newBody (already indented lines string).
- * Works line-by-line: once inside tick(), skip lines until the first unindented one.
- */
-function replaceTick(src: string, newBody: string): string {
-	const lines = src.split('\n');
-	const out: string[] = [];
-	let inTick = false;
-	let replaced = false;
-	for (const line of lines) {
-		if (!inTick && line.trimEnd() === 'def tick():') {
-			inTick = true;
-			if (!replaced) { out.push(line); out.push(newBody); replaced = true; }
-			continue;
-		}
-		if (inTick) {
-			if (line === '' || line.startsWith('    ') || line.startsWith('\t')) continue;
-			inTick = false;
-			out.push(line);
-		} else {
-			out.push(line);
-		}
-	}
-	return out.join('\n');
-}
-
-/**
- * Extract the body lines of `elif preset == 'name':` from tick().
- * Returns those lines de-indented by one level (4 spaces).
- */
-function extractPresetBranch(src: string, name: string): string {
-	const lines = src.split('\n');
-	const startPattern = new RegExp(`^    (?:if|elif) preset == '${name}':`);
-	const nextBranchPattern = /^    (?:if|elif) preset == '/;
-
-	let capturing = false;
-	const body: string[] = [];
-
-	for (const line of lines) {
-		if (!capturing) {
-			if (startPattern.test(line)) capturing = true;
-			continue;
-		}
-		if (nextBranchPattern.test(line) && !startPattern.test(line)) break;
-		if (line.length > 0 && line[0] !== ' ' && !line.startsWith('\t')) break;
-		body.push(line.slice(4));
-	}
-	return body.join('\n');
-}
-
-/**
  * Write `main` into a fresh filesystem, enforce FS_BUDGET, and assemble the hex.
  * `tooLarge` builds the caller-specific error message when the budget is exceeded.
  * On success in dev mode, logs the byte count so budget regressions are visible
@@ -132,53 +82,28 @@ async function buildHex(main: string): Promise<ArrayBuffer> {
 	);
 }
 
-// L1 hex is shared across all Level 1 missions — cache it.
-let l1HexCache: ArrayBuffer | null = null;
+// Shared across every Level 0 + Level 1 mission — flash once, cache it. All
+// presets stay in tick() (selected live via P:<preset>), so switching missions
+// never requires a reflash — only the standalone on-board menu (irrelevant
+// once the browser is driving) is stripped.
+let duckyOsHexCache: ArrayBuffer | null = null;
 
 /**
- * Build the Level 1 listener firmware.
- * No presets, no on-board menu. Browser sends M:/N:/F:/T:/S?/S!/R: commands directly.
+ * Build the shared Ducky OS listener firmware used by every L0 + L1 mission.
+ * No on-board menu (browser drives preset selection via P:<preset>); every
+ * preset's tick() logic stays intact so switching missions is instant.
  */
-export async function buildL1Hex(): Promise<ArrayBuffer> {
-	if (l1HexCache) return l1HexCache;
+export async function buildDuckyOsHex(): Promise<ArrayBuffer> {
+	if (duckyOsHexCache) return duckyOsHexCache;
 
 	let src = stripMenuOnlyRegions(duckyOsSource);
-	src = replaceTick(src, '    pass');
 	src = minify(src);
-	l1HexCache = await buildHex(src);
-	return l1HexCache;
-}
-
-// L0 preset hexes are cached per preset name.
-const l0HexCache = new Map<string, ArrayBuffer>();
-
-/**
- * Build a Level 0 preset firmware with a single hardcoded preset.
- * No on-board menu. The preset runs immediately on boot.
- */
-export async function buildL0PresetHex(preset: string): Promise<ArrayBuffer> {
-	if (l0HexCache.has(preset)) return l0HexCache.get(preset)!;
-
-	let src = stripMenuOnlyRegions(duckyOsSource);
-	src = src.replace(/^preset = None$/m, `preset = '${preset}'`);
-
-	const branch = extractPresetBranch(src, preset);
-	const tickBody = [
-		'    global preset, state',
-		'    n = running_time()',
-		`    if preset == '${preset}':`,
-		...branch.split('\n').map((l) => '        ' + l)
-	].join('\n');
-	src = replaceTick(src, tickBody);
-	src = minify(src);
-	const hex = await buildHex(src);
-	l0HexCache.set(preset, hex);
-	return hex;
+	duckyOsHexCache = await buildHex(src);
+	return duckyOsHexCache;
 }
 
 export function invalidateHexCache(): void {
-	l1HexCache = null;
-	l0HexCache.clear();
+	duckyOsHexCache = null;
 }
 
 /**

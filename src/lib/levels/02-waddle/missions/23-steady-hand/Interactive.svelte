@@ -15,11 +15,11 @@ streak = 0
 while True:
     x = accelerometer.get_x()
     y = accelerometer.get_y()
-    wobble = abs(x) + abs(y)
+    wobble = abs(x) + abs(y)     # abs() strips the minus sign — direction doesn't matter here
 
     if wobble < ___(300):
         streak = streak + 1
-        if streak > best:
+        if streak > best:        # an if can live inside another if
             best = streak
         display.show(Image.HAPPY)
     else:

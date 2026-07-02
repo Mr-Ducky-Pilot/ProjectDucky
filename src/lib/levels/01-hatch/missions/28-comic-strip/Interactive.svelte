@@ -2,6 +2,7 @@
 	import { connection } from '$lib/stores/connection';
 	import DrawingPad from '$lib/components/DrawingPad.svelte';
 	import LedMatrix from '$lib/components/LedMatrix.svelte';
+	import { onDestroy } from 'svelte';
 
 	type Panel = { bits: boolean[]; caption: string };
 
@@ -9,6 +10,12 @@
 	let panels = $state<Panel[]>([empty(), empty(), empty(), empty()]);
 	let activeIdx = $state(0);
 	let playing = $state(false);
+	let playingIdx = $state(-1);
+
+	// Bumped every play() call; a stale call checks this before each panel so
+	// navigating away (or clicking Play again) stops a previous run cold
+	// instead of it continuing to send matrix frames in the background.
+	let playToken = 0;
 
 	function setBits(b: boolean[]) {
 		panels[activeIdx].bits = b;
@@ -16,13 +23,23 @@
 	}
 
 	async function play() {
+		const token = ++playToken;
 		playing = true;
-		for (const p of panels) {
-			void connection.send({ type: 'matrix', bits: p.bits }).catch(() => {});
+		for (let i = 0; i < panels.length; i++) {
+			if (token !== playToken) return; // superseded — stop silently
+			playingIdx = i;
+			void connection.send({ type: 'matrix', bits: panels[i].bits }).catch(() => {});
 			await new Promise((r) => setTimeout(r, 1800));
 		}
-		playing = false;
+		if (token === playToken) {
+			playing = false;
+			playingIdx = -1;
+		}
 	}
+
+	onDestroy(() => {
+		playToken++; // invalidate any in-flight play() loop
+	});
 </script>
 
 <div class="flex flex-col gap-6">
@@ -30,14 +47,19 @@
 		{#each panels as p, i}
 			<button
 				class="flex flex-col items-center gap-1 rounded-2xl p-2 transition"
-				class:bg-duck-yellow={activeIdx === i}
-				class:bg-mist={activeIdx !== i}
+				class:bg-(--color-duck-yellow)={activeIdx === i}
+				class:bg-(--color-mist)={activeIdx !== i}
+				class:ring-2={playingIdx === i}
+				class:ring-(--color-leaf-green)={playingIdx === i}
 				onclick={() => (activeIdx = i)}
 			>
-				<LedMatrix bits={p.bits} size={70} color="#1c1f2e" />
+				<LedMatrix bits={p.bits} size={70} color={playingIdx === i ? '#7ad44b' : '#1c1f2e'} />
 				<p class="max-w-[70px] truncate text-[10px] font-bold text-night-ink">
 					{p.caption || `Panel ${i + 1}`}
 				</p>
+				{#if playingIdx === i}
+					<span class="text-[9px] font-extrabold text-(--color-leaf-deep)">▶ now on Ducky</span>
+				{/if}
 			</button>
 		{/each}
 	</div>

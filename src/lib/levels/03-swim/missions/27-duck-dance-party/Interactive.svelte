@@ -38,6 +38,12 @@ while True:
 
 	let code = $state('');
 	let allFilled = $state(false);
+
+	const mlSuggestions = {
+		0: `display.show(Image.HEART)\nmusic.play(music.JUMP_UP)`,
+		1: `display.show(Image.YES)\nmusic.play(music.PRELUDE)`,
+		2: `display.show(Image.SURPRISED)\nmusic.play(music.POWER_UP)\nsleep(200)\ndisplay.show(Image.HAPPY)`
+	};
 </script>
 
 <div class="flex flex-col gap-5">
@@ -47,7 +53,7 @@ while True:
 		<span class="text-(--color-night-soft)">Write each line of your code starting at the <em>left edge</em> of the textarea — indentation is handled automatically.</span>
 	</div>
 
-	<CodeEditor template={TEMPLATE} bind:code bind:allFilled />
+	<CodeEditor template={TEMPLATE} bind:code bind:allFilled {mlSuggestions} />
 
 	<FlashCodeButton {code} disabled={!allFilled} onFlashed={complete} />
 

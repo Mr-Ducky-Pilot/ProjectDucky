@@ -10,7 +10,7 @@
 	const TEMPLATE = `from microbit import *
 import random
 
-answers = [
+answers = [                       # a list — an ordered collection, one item per line
     "___(yes)",
     "___(no)",
     "___(maybe)",
@@ -21,7 +21,7 @@ while True:
     if accelerometer.was_gesture('shake'):
         display.show(Image.SURPRISED)
         sleep(400)
-        display.scroll(random.choice(answers))
+        display.scroll(random.choice(answers))   # picks one item from the list at random
     sleep(50)`;
 
 	let code = $state('');

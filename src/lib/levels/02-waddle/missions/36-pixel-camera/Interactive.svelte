@@ -9,14 +9,14 @@
 
 	const TEMPLATE = `from microbit import *
 
-frames = ___([])
+frames = ___([])   # an empty list — frames.append() will add snapshots to it
 
-def snap():
+def snap():          # def creates a reusable block, run later by calling snap()
     row = []
     for y in range(5):
         for x in range(5):
             row.append(display.get_pixel(x, y))
-    return row
+    return row        # sends this value back to whoever called snap()
 
 def show(row):
     for y in range(5):
@@ -30,7 +30,7 @@ while True:
     if button_a.was_pressed():
         frames.append(___(snap()))
     if button_b.was_pressed():
-        for f in frames:
+        for f in frames:         # loop over every saved frame, in order
             show(f)
             sleep(___(300))
     sleep(50)`;

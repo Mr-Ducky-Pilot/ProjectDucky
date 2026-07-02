@@ -55,12 +55,10 @@
 	);
 
 	const isDuckyLevel = $derived(data.level.id === 0 || data.level.id === 1);
-	// L1 shares one hex — ready once 'l1' is flashed. L0 has per-preset firmware; just check connected.
+	// L0 and L1 share one hex — ready once 'ducky-os' is flashed. Missions switch
+	// live via P:<preset>, so this covers both levels the same way.
 	const duckyReady = $derived(
-		$conn.status === 'connected' &&
-		(data.level.id === 1
-			? $conn.lastFlashedFirmware === 'l1'
-			: $conn.lastFlashedFirmware !== null)
+		$conn.status === 'connected' && $conn.lastFlashedFirmware === 'ducky-os'
 	);
 
 </script>
@@ -107,42 +105,20 @@
 							✅ {$petLabel} is connected — pick a mission!
 						</p>
 						<p class="mt-1 text-sm text-(--color-night-soft)">
-							{#if data.level.id === 1}
-								Switching missions is instant — no re-flashing needed.
-							{:else}
-								Each mission flashes its own activity. Revisiting the same mission is instant.
-							{/if}
+							Switching missions is instant — {$petLabel} follows along automatically, no re-flashing needed.
 						</p>
 					{:else}
 						<p class="font-display font-extrabold text-(--color-night-ink)">
-							{#if data.level.id === 1}
-								Flash {$petLabel} once to get started
-							{:else}
-								Connect {$petLabel} to get started
-							{/if}
+							Flash {$petLabel} once to get started
 						</p>
 						<p class="mt-1 text-sm text-(--color-night-soft)">
-							{#if data.level.id === 1}
-								One flash loads all Level 1 activities. After that, switching missions is instant.
-							{:else}
-								Pick any mission — it will flash {$petLabel} with that activity automatically.
-							{/if}
+							One flash loads every Level 0 + Level 1 activity. After that, {$petLabel} follows whichever mission you're viewing automatically.
 						</p>
 					{/if}
 				</div>
 				{#if !duckyReady}
 					<div class="shrink-0">
-						{#if data.level.id === 1}
-							<FlashButton label="Flash {$petLabel}" flashedLabel="{$petLabel} is ready!" />
-						{:else}
-							<button
-								type="button"
-								onclick={() => connection.connect()}
-								class="pop-btn pop-btn--yellow"
-							>
-								Connect {$petLabel}
-							</button>
-						{/if}
+						<FlashButton label="Flash {$petLabel}" flashedLabel="{$petLabel} is ready!" />
 					</div>
 				{/if}
 			</div>

@@ -44,6 +44,11 @@ while True:
 
 	let code = $state('');
 	let allFilled = $state(false);
+
+	const mlSuggestions = {
+		1: `display.show(Image.HAPPY)\nmusic.play(['C5:4','E5:4','G5:8'])`,
+		2: `if received == MY_SECRET:\n    celebrate()\nelse:\n    reject()`
+	};
 </script>
 
 <div class="flex flex-col gap-5">
@@ -60,7 +65,7 @@ while True:
 		</div>
 	</div>
 
-	<CodeEditor template={TEMPLATE} bind:code bind:allFilled />
+	<CodeEditor template={TEMPLATE} bind:code bind:allFilled {mlSuggestions} />
 
 	<FlashCodeButton {code} disabled={!allFilled} onFlashed={complete} />
 

@@ -21,7 +21,7 @@ type ConnState = {
 	deviceSerial: string | null;
 	webusbSupported: boolean;
 	preferMock: boolean;
-	lastFlashedFirmware: 'l1' | `l0:${string}` | 'custom' | null;
+	lastFlashedFirmware: 'ducky-os' | 'custom' | null;
 };
 
 const initial: ConnState = {
@@ -39,6 +39,13 @@ const initial: ConnState = {
 const _store = writable<ConnState>(initial);
 let instance: AdapterInstance | null = null;
 const eventListeners = new Set<(e: IncomingEvent) => void>();
+
+// Serializes every outgoing serial write. Many callers fire multiple
+// connection.send() calls back-to-back without awaiting each one (e.g. a
+// mission sending face + rgb + sound together) — without this queue, those
+// writes can race at the WebUSB transport layer and interleave/corrupt each
+// other, silently dropping whichever command loses the race.
+let sendChain: Promise<void> = Promise.resolve();
 
 const offEventInternal = (cb: (e: IncomingEvent) => void) => {
 	eventListeners.delete(cb);
@@ -129,7 +136,7 @@ export const connection = {
 		}));
 	},
 
-	async flash(source: FlashSource, firmware: 'l1' | `l0:${string}` | 'custom' = 'custom') {
+	async flash(source: FlashSource, firmware: 'ducky-os' | 'custom' = 'custom') {
 		const a = await ensureAdapter();
 		_store.update((s) => ({ ...s, status: 'flashing', flash: { phase: 'erasing', pct: 0 } }));
 		try {
@@ -148,7 +155,14 @@ export const connection = {
 
 	async send(command: OutgoingCommand) {
 		const a = await ensureAdapter();
-		await a.send(command);
+		const run = sendChain.then(() => a.send(command));
+		// Keep the chain alive even if this write fails, so one bad command
+		// doesn't permanently wedge every send after it.
+		sendChain = run.then(
+			() => undefined,
+			() => undefined
+		);
+		return run;
 	},
 
 	/**

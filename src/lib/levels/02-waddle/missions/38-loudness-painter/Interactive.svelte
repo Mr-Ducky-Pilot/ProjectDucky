@@ -15,7 +15,7 @@ FADE  = ___(1)
 
 while True:
     sound = microphone.sound_level()
-    b = min(9, sound // SCALE)
+    b = min(9, sound // SCALE)   # // rounds down after dividing; min() caps it at 9
     # paint a random pixel at brightness b
     x = randint(0, 4)
     y = randint(0, 4)

@@ -1,8 +1,12 @@
 <script lang="ts">
 	type Props = {
 		markdown: string;
+		/** Starts collapsed so the mission page doesn't front-load a wall of code. */
+		startExpanded?: boolean;
 	};
-	let { markdown }: Props = $props();
+	let { markdown, startExpanded = false }: Props = $props();
+
+	let expanded = $state(startExpanded);
 
 	const KEYWORDS = new Set([
 		'False', 'None', 'True', 'and', 'as', 'assert', 'async', 'await',
@@ -129,19 +133,32 @@
 </script>
 
 <aside class="card overflow-hidden rounded-3xl" style="background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%);">
-	<div class="flex items-center gap-2 border-b border-white/10 px-5 py-3">
+	<button
+		type="button"
+		onclick={() => (expanded = !expanded)}
+		class="flex w-full items-center gap-2 border-b border-white/10 px-5 py-3 text-left"
+		aria-expanded={expanded}
+	>
 		<span class="flex gap-1.5">
 			<span class="size-3 rounded-full bg-red-500/70"></span>
 			<span class="size-3 rounded-full bg-yellow-500/70"></span>
 			<span class="size-3 rounded-full bg-green-500/70"></span>
 		</span>
 		<span class="font-mono text-xs text-slate-400">ducky_os.py</span>
-	</div>
-	<div
-		class="cc-body space-y-3 px-5 py-4 font-mono text-sm leading-relaxed text-slate-300"
-	>
-		{@html html}
-	</div>
+		<span class="ml-auto flex items-center gap-1 text-xs font-bold text-slate-400">
+			{expanded ? 'Hide' : 'Show'} code
+			<span class="inline-block transition-transform" style="transform: rotate({expanded ? 180 : 0}deg);">
+				▾
+			</span>
+		</span>
+	</button>
+	{#if expanded}
+		<div
+			class="cc-body space-y-3 px-5 py-4 font-mono text-sm leading-relaxed text-slate-300"
+		>
+			{@html html}
+		</div>
+	{/if}
 </aside>
 
 <style>

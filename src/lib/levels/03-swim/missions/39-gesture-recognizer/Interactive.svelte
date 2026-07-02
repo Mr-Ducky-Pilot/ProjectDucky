@@ -36,6 +36,10 @@ while True:
 
 	let code = $state('');
 	let allFilled = $state(false);
+
+	const mlSuggestions = {
+		0: `if g > 1800:\n    return "shake"\nif x < -500:\n    return "tilt-l"\nif x > 500:\n    return "tilt-r"\nreturn None`
+	};
 </script>
 
 <div class="flex flex-col gap-5">
@@ -45,7 +49,7 @@ while True:
 		gesture name as a string, or <code>None</code>.
 	</div>
 
-	<CodeEditor template={TEMPLATE} bind:code bind:allFilled />
+	<CodeEditor template={TEMPLATE} bind:code bind:allFilled {mlSuggestions} />
 
 	<FlashCodeButton {code} disabled={!allFilled} onFlashed={complete} />
 

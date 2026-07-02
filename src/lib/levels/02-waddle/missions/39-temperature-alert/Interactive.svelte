@@ -9,7 +9,7 @@
 
 	const TEMPLATE = `from microbit import *
 
-HIGH = ___(30)
+HIGH = ___(30)      # the threshold this whole program compares against
 
 while True:
     t = temperature()

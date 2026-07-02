@@ -35,12 +35,17 @@
 
 	// Board button navigation: double-tap AA = previous, BB = next (within 2s).
 	// Single press is passed through to the active mission's own game logic.
+	// Skipped entirely for missions whose own gameplay uses the physical
+	// buttons (hardware includes 'buttons') — otherwise rapid in-mission
+	// button presses (cycling a mood, tapping a reaction test) get
+	// misinterpreted as "navigate to the next mission".
 	onMount(() => {
 		let lastA = 0, lastB = 0;
 		const DOUBLE_MS = 2000;
 
 		const off = connection.onEvent((e) => {
 			if (e.type !== 'button' || e.phase !== 'down') return;
+			if (mission.hardware.includes('buttons')) return;
 			const now = Date.now();
 			if (e.button === 'B') {
 				if (now - lastB <= DOUBLE_MS && data.nextMission) {

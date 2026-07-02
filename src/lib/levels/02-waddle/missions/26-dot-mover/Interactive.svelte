@@ -9,21 +9,21 @@
 
 	const TEMPLATE = `from microbit import *
 
-x = ___(2)
-y = ___(2)
+x = ___(2)     # starting column, 0-4
+y = ___(2)     # starting row, 0-4
 
 while True:
     display.clear()
-    display.set_pixel(x, y, 9)
+    display.set_pixel(x, y, 9)   # (column, row, brightness 0-9)
 
     if button_a.was_pressed():
         x = x - 1
-        if x < 0:
+        if x < 0:                # went past the left edge — wrap to the right
             x = 4
 
     if button_b.was_pressed():
         x = x + 1
-        if x > ___(4):
+        if x > ___(4):           # went past the right edge — wrap to the left
             x = 0
 
     sleep(100)`;

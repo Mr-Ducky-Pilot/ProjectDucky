@@ -9,7 +9,7 @@ const meta: MissionMeta = {
 	oneLiner: 'Record a live temperature graph and save it as a PNG.',
 	story: 'Real scientists collect data over time. Plug Ducky in, leave it on a windowsill for an hour, then save the graph.',
 	duckyIntro: 'I\'m a tiny weather station. Let\'s draw a graph together.',
-	hardware: ['temp'],
+	hardware: ['temp', 'ambient-temp'],
 	pairMode: false,
 	dimension: 'science',
 	estMinutes: 15,

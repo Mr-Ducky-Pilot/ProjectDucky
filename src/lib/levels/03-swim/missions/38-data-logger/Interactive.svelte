@@ -32,6 +32,10 @@ display.show(Image.HEART)`;
 	let allFilled = $state(false);
 	let samples = $state<{ t: number; v: number }[]>([]);
 
+	const mlSuggestions = {
+		1: `v = display.read_light_level()\nlog(t, v)`
+	};
+
 	onMount(() => {
 		return connection.onEvent((e) => {
 			if (e.type === 'log' && e.text.startsWith('D ')) {
@@ -52,7 +56,7 @@ display.show(Image.HEART)`;
 		a single line that reads your chosen sensor and calls <code>log(t, value)</code>.
 	</div>
 
-	<CodeEditor template={TEMPLATE} bind:code bind:allFilled />
+	<CodeEditor template={TEMPLATE} bind:code bind:allFilled {mlSuggestions} />
 
 	<FlashCodeButton {code} disabled={!allFilled} onFlashed={complete} />
 

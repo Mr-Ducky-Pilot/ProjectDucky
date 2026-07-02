@@ -5,12 +5,91 @@
 	const ROWS = 4;
 	const COLS = 16;
 	const ROW_NAMES = ['Kick', 'Snare', 'Hat', 'Clap'];
+	// Board tone (T: protocol — simple square-wave beeps, one pitch per row).
 	const ROW_NOTES = ['C3', 'F4', 'A5', 'D5'];
+	const ROW_MS = [120, 80, 40, 60]; // longer thump for kick, snappy for hat
 
 	let grid = $state(Array.from({ length: ROWS }, () => new Array(COLS).fill(false)));
 	let step = $state(-1);
 	let playing = $state(false);
 	let bpm = $state(110);
+
+	// --- Local Web Audio drum synth (instant feedback, real percussive
+	// timbre — the board can only play a single square-wave pitch per note,
+	// so kick/snare/hat/clap all sounded the same there; this gives each one
+	// actual character: pitched thump, noise-burst snare/hat/clap).
+	let audioCtx: AudioContext | null = null;
+	function ensureAudio(): AudioContext {
+		if (!audioCtx) audioCtx = new AudioContext();
+		return audioCtx;
+	}
+	function makeNoise(ctx: AudioContext): AudioBufferSourceNode {
+		const buf = ctx.createBuffer(1, ctx.sampleRate * 0.2, ctx.sampleRate);
+		const data = buf.getChannelData(0);
+		for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
+		const src = ctx.createBufferSource();
+		src.buffer = buf;
+		return src;
+	}
+	function playDrum(row: number) {
+		const ctx = ensureAudio();
+		const t = ctx.currentTime;
+		if (row === 0) {
+			// Kick: sine sweeping down with a quick decay
+			const osc = ctx.createOscillator();
+			const gain = ctx.createGain();
+			osc.type = 'sine';
+			osc.frequency.setValueAtTime(150, t);
+			osc.frequency.exponentialRampToValueAtTime(45, t + 0.12);
+			gain.gain.setValueAtTime(0.9, t);
+			gain.gain.exponentialRampToValueAtTime(0.001, t + 0.15);
+			osc.connect(gain).connect(ctx.destination);
+			osc.start(t);
+			osc.stop(t + 0.16);
+		} else if (row === 1) {
+			// Snare: tonal body + noise burst
+			const osc = ctx.createOscillator();
+			const oscGain = ctx.createGain();
+			osc.type = 'triangle';
+			osc.frequency.setValueAtTime(190, t);
+			oscGain.gain.setValueAtTime(0.4, t);
+			oscGain.gain.exponentialRampToValueAtTime(0.001, t + 0.08);
+			osc.connect(oscGain).connect(ctx.destination);
+			osc.start(t);
+			osc.stop(t + 0.09);
+			const noise = makeNoise(ctx);
+			const noiseGain = ctx.createGain();
+			noiseGain.gain.setValueAtTime(0.5, t);
+			noiseGain.gain.exponentialRampToValueAtTime(0.001, t + 0.1);
+			noise.connect(noiseGain).connect(ctx.destination);
+			noise.start(t);
+			noise.stop(t + 0.1);
+		} else if (row === 2) {
+			// Hat: short bright high-passed noise burst
+			const noise = makeNoise(ctx);
+			const hp = ctx.createBiquadFilter();
+			hp.type = 'highpass';
+			hp.frequency.value = 6000;
+			const gain = ctx.createGain();
+			gain.gain.setValueAtTime(0.3, t);
+			gain.gain.exponentialRampToValueAtTime(0.001, t + 0.04);
+			noise.connect(hp).connect(gain).connect(ctx.destination);
+			noise.start(t);
+			noise.stop(t + 0.05);
+		} else {
+			// Clap: band-passed noise burst, slightly longer than the hat
+			const noise = makeNoise(ctx);
+			const bp = ctx.createBiquadFilter();
+			bp.type = 'bandpass';
+			bp.frequency.value = 1500;
+			const gain = ctx.createGain();
+			gain.gain.setValueAtTime(0.5, t);
+			gain.gain.exponentialRampToValueAtTime(0.001, t + 0.09);
+			noise.connect(bp).connect(gain).connect(ctx.destination);
+			noise.start(t);
+			noise.stop(t + 0.1);
+		}
+	}
 
 	$effect(() => {
 		if (!playing) return;
@@ -19,7 +98,10 @@
 			step = (step + 1) % COLS;
 			const tones = [];
 			for (let r = 0; r < ROWS; r++) {
-				if (grid[r][step]) tones.push({ note: ROW_NOTES[r], ms: 60 });
+				if (grid[r][step]) {
+					tones.push({ note: ROW_NOTES[r], ms: ROW_MS[r] });
+					playDrum(r);
+				}
 			}
 			if (tones.length) {
 				void connection.send({ type: 'tone', sequence: tones }).catch(() => {});
@@ -35,6 +117,7 @@
 	function toggle(r: number, c: number) {
 		grid[r][c] = !grid[r][c];
 		grid = grid;
+		if (grid[r][c]) playDrum(r); // preview the sound the moment it's turned on
 	}
 
 	function clear() {

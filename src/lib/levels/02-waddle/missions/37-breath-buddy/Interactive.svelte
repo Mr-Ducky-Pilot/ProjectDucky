@@ -14,7 +14,7 @@ IN = ___(4)
 HOLD = ___(7)
 OUT = ___(8)
 
-def ring(size):
+def ring(size):                       # draws a square ring of the given size (1-5)
     grid = [[0] * 5 for _ in range(5)]
     for y in range(5):
         for x in range(5):
@@ -24,11 +24,11 @@ def ring(size):
     display.show(Image(":".join("".join(str(c) for c in row) for row in grid)))
 
 while True:
-    for size in range(1, 6):
+    for size in range(1, 6):          # grow the ring outward — "breathe in"
         ring(size)
         sleep(IN * 1000 // 5)
-    sleep(HOLD * 1000)
-    for size in range(5, 0, -1):
+    sleep(HOLD * 1000)                 # hold at full size
+    for size in range(5, 0, -1):      # shrink back down — "breathe out"
         ring(size)
         sleep(OUT * 1000 // 5)`;
 

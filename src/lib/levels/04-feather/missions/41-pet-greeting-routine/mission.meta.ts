@@ -7,7 +7,7 @@ const meta: MissionMeta = {
 	title: 'Boot Greeting',
 	emoji: '👋',
 	oneLiner: 'Program what your duck does when it wakes up.',
-	story: 'Choose its first face, first sound, and first scroll. Every time it powers on, this is what your friends see.',
+	story: 'Choose its first face, first sound, and first scroll. Every time it powers on, a tiny icon of your actual pet species flashes first — then this is what your friends see.',
 	duckyIntro: 'When I wake, what should I do first?',
 	hardware: ['led-matrix', 'speaker'],
 	pairMode: false,

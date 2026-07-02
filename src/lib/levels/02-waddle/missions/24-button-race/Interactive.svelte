@@ -14,7 +14,7 @@ a_score = 0
 b_score = 0
 
 while True:
-    if button_a.was_pressed():
+    if button_a.was_pressed():   # True for one loop, right after A is pressed
         a_score = a_score + 1
         display.show("A")
         if a_score >= WIN:

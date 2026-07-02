@@ -52,6 +52,12 @@ while True:
 
 	let code = $state('');
 	let allFilled = $state(false);
+
+	const mlSuggestions = {
+		2: `lit = int((c / total) * 5)\nrows = ["99999" if (4 - r) < lit else "00000" for r in range(5)]\ndisplay.show(Image(":".join(rows)))`,
+		3: `display.show(Image.SKULL)\nmusic.play(music.WAWAWAWAA)\ndisplay.scroll("BOOM!")`,
+		4: `radio.send("potato")\nhas_potato = False\ndisplay.show(Image.HAPPY)`
+	};
 </script>
 
 <div class="flex flex-col gap-5">
@@ -74,7 +80,7 @@ while True:
 		💡 <code>MAX_TICKS × 0.2s</code> = total seconds. 30 ticks = 6 seconds. Try 50 for a longer game.
 	</div>
 
-	<CodeEditor template={TEMPLATE} bind:code bind:allFilled />
+	<CodeEditor template={TEMPLATE} bind:code bind:allFilled {mlSuggestions} />
 
 	<FlashCodeButton {code} disabled={!allFilled} onFlashed={complete} />
 

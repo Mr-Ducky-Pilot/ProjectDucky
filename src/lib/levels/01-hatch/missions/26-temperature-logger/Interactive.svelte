@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { connection } from '$lib/stores/connection';
+	import { streamAmbientTemp } from '$lib/data/ambientTemp';
 	import DataGraph from '$lib/components/DataGraph.svelte';
 
 	type Sample = { t: number; v: number };
@@ -8,6 +9,9 @@
 	let samples = $state<Sample[]>([]);
 	let recording = $state(false);
 	let started = 0;
+	let ambientAvailable = $state(false);
+	let latestCpu = 0;
+	let latestAmbient = 0;
 
 	function start() {
 		samples = [];
@@ -31,14 +35,34 @@
 		a.remove();
 	}
 
+	function record(v: number) {
+		if (recording) samples = [...samples, { t: Date.now() - started, v }];
+	}
+
 	onMount(() => {
-		let off: (() => void) | null = null;
+		let offCpu: (() => void) | null = null;
+		let offAmbient: (() => void) | null = null;
 		async function subscribe() {
 			try {
-				off?.();
-				off = await connection.streamSensor('temp', ([v]) => {
-					if (recording) samples = [...samples, { t: Date.now() - started, v }];
+				offCpu?.();
+				offCpu = null;
+				offCpu = await connection.streamSensor('temp', ([v]) => {
+					latestCpu = v;
+					if (!ambientAvailable) record(v);
 				});
+			} catch {
+				/* not connected */
+			}
+			try {
+				offAmbient?.();
+				offAmbient = null;
+				offAmbient = await streamAmbientTemp(
+					(v) => {
+						latestAmbient = v;
+						if (ambientAvailable) record(v);
+					},
+					(available) => (ambientAvailable = available)
+				);
 			} catch {
 				/* not connected */
 			}
@@ -46,7 +70,8 @@
 		void subscribe();
 		const offReady = connection.onReady(() => void subscribe());
 		return () => {
-			off?.();
+			offCpu?.();
+			offAmbient?.();
 			offReady();
 		};
 	});
@@ -85,6 +110,14 @@
 			</span>
 		{/if}
 	</div>
+
+	{#if ambientAvailable}
+		<p class="text-xs font-bold text-(--color-leaf-deep)">✓ Logging from the real Grove Temperature Sensor</p>
+	{:else}
+		<p class="text-xs text-(--color-night-soft)">
+			Logging the chip's CPU estimate. 💡 Connect a Grove Temperature Sensor to pin 1 for real readings.
+		</p>
+	{/if}
 
 	<div class="rounded-2xl bg-egg-cream p-4 shadow-soft">
 		<DataGraph

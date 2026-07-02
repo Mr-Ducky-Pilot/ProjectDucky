@@ -8,9 +8,17 @@
 		template: string;
 		code?: string;
 		allFilled?: boolean;
+		/**
+		 * Suggested reference solutions for multi-line (___ml) blanks, keyed by
+		 * the blank's gap index (same numbering as every gap in the template,
+		 * counted left-to-right/top-to-bottom). Only needed for blanks where
+		 * "fill it for me" should be offered — blanks without an entry here
+		 * just don't get the button.
+		 */
+		mlSuggestions?: Record<number, string>;
 	};
 
-	let { template, code = $bindable(''), allFilled = $bindable(false) }: Props = $props();
+	let { template, code = $bindable(''), allFilled = $bindable(false), mlSuggestions = {} }: Props = $props();
 
 	// Match ___ml(hint) first so it takes priority over ___(hint)
 	const GAP_RE = /___ml\(([^)]*)\)|___\(([^)]*)\)|___/g;
@@ -74,7 +82,9 @@
 
 	const { lines, gapCount } = parseTemplate(template);
 	const mlIndents = computeMlIndents(template);
+	const hasMlGaps = lines.some((line) => line.some((s) => s.kind === 'gap-ml'));
 	let values = $state(new Array(gapCount).fill(''));
+	let filledForMe = $state(new Set<number>());
 
 	const assembled = $derived.by(() => {
 		const regex = new RegExp(GAP_RE.source, 'g');
@@ -103,6 +113,21 @@
 		el.style.height = 'auto';
 		el.style.height = el.scrollHeight + 'px';
 	}
+
+	function fillForMe(idx: number) {
+		const suggestion = mlSuggestions[idx];
+		if (!suggestion) return;
+		values[idx] = suggestion;
+		filledForMe.add(idx);
+		filledForMe = filledForMe;
+	}
+
+	// Reactive width: grows with whichever is longer, the hint or what's
+	// actually been typed, so digits never get clipped once a value is longer
+	// than the original placeholder suggested.
+	function gapWidthCh(placeholder: string, value: string): number {
+		return Math.max(4, Math.max(placeholder.length, value.length) + 2);
+	}
 </script>
 
 <div class="overflow-hidden rounded-2xl bg-(--color-night-ink) font-mono text-sm leading-relaxed shadow-lg">
@@ -126,6 +151,13 @@
 		</span>
 	</div>
 
+	{#if hasMlGaps}
+		<div class="border-b border-white/10 bg-white/5 px-4 py-2 text-xs text-white/50">
+			💡 The highlighted boxes want real MicroPython, not just a value — write it the way the rest of
+			the file is written (same style of function calls, one idea per line).
+		</div>
+	{/if}
+
 	<!-- Code body -->
 	<div class="overflow-x-auto p-5">
 		{#each lines as line}
@@ -137,19 +169,42 @@
 							<span class="whitespace-pre text-[#c9d1d9]">{seg.text}</span>
 						{:else if seg.kind === 'gap'}
 							<input
-								class="mx-0.5 inline-block min-w-[3ch] rounded-md bg-(--color-duck-yellow) px-1.5 py-0.5 font-mono text-sm font-bold text-(--color-night-ink) outline-none transition focus:ring-2 focus:ring-(--color-duck-yellow)/60 focus:ring-offset-1 focus:ring-offset-(--color-night-ink)"
-								style="width: {Math.max(3, (seg.placeholder.length || 1) + 1)}ch;"
+								class="mx-0.5 inline-block min-w-[3ch] rounded-md bg-(--color-duck-yellow) px-2.5 py-1 font-mono text-sm font-bold text-(--color-night-ink) outline-none transition focus:ring-2 focus:ring-(--color-duck-yellow)/60 focus:ring-offset-1 focus:ring-offset-(--color-night-ink)"
+								style="width: {gapWidthCh(seg.placeholder, values[seg.index] ?? '')}ch;"
 								placeholder={seg.placeholder || '?'}
 								bind:value={values[seg.index]}
 							/>
 						{:else if seg.kind === 'gap-ml'}
-							<textarea
-								class="mt-1.5 block w-full resize-none rounded-lg border-2 border-(--color-duck-yellow)/50 bg-(--color-duck-yellow)/8 px-3 py-2 font-mono text-sm text-(--color-duck-yellow) outline-none transition placeholder-[#c9d1d9]/30 focus:border-(--color-duck-yellow) focus:bg-(--color-duck-yellow)/12"
-								placeholder={seg.placeholder || 'write your code here…'}
-								rows={3}
-								bind:value={values[seg.index]}
-								oninput={(e) => autoResize(e.currentTarget)}
-							></textarea>
+							<div class="mt-1.5 flex flex-col gap-1.5">
+								{#if seg.placeholder}
+									<p class="text-xs font-bold text-(--color-duck-yellow)/80">
+										💬 {seg.placeholder}
+									</p>
+								{/if}
+								<textarea
+									class="block w-full resize-none rounded-lg border-2 border-(--color-duck-yellow)/50 bg-(--color-duck-yellow)/8 px-3 py-2 font-mono text-sm text-(--color-duck-yellow) outline-none transition placeholder-[#c9d1d9]/30 focus:border-(--color-duck-yellow) focus:bg-(--color-duck-yellow)/12"
+									placeholder="write your code here…"
+									rows={3}
+									bind:value={values[seg.index]}
+									oninput={(e) => autoResize(e.currentTarget)}
+								></textarea>
+								{#if mlSuggestions[seg.index]}
+									<div class="flex items-center gap-2">
+										<button
+											type="button"
+											onclick={() => fillForMe(seg.index)}
+											class="rounded-full bg-white/10 px-3 py-1 text-xs font-bold text-white/70 transition hover:bg-white/20"
+										>
+											✨ Fill it for me
+										</button>
+										<span class="text-[11px] text-white/35">
+											{filledForMe.has(seg.index)
+												? 'Filled — feel free to change it, that\'s the fun part.'
+												: 'Try writing it yourself first — it sticks better. Stuck? This shows one way to do it.'}
+										</span>
+									</div>
+								{/if}
+							</div>
 						{/if}
 					{/each}
 				</div>
@@ -161,8 +216,8 @@
 							<span class="whitespace-pre text-[#c9d1d9]">{seg.text}</span>
 						{:else}
 							<input
-								class="mx-0.5 inline-block min-w-[3ch] rounded-md bg-(--color-duck-yellow) px-1.5 py-0.5 font-mono text-sm font-bold text-(--color-night-ink) outline-none transition focus:ring-2 focus:ring-(--color-duck-yellow)/60 focus:ring-offset-1 focus:ring-offset-(--color-night-ink)"
-								style="width: {Math.max(3, (seg.placeholder.length || 1) + 1)}ch;"
+								class="mx-0.5 inline-block min-w-[3ch] rounded-md bg-(--color-duck-yellow) px-2.5 py-1 font-mono text-sm font-bold text-(--color-night-ink) outline-none transition focus:ring-2 focus:ring-(--color-duck-yellow)/60 focus:ring-offset-1 focus:ring-offset-(--color-night-ink)"
+								style="width: {gapWidthCh(seg.placeholder, values[seg.index] ?? '')}ch;"
 								placeholder={seg.placeholder || '?'}
 								bind:value={values[seg.index]}
 							/>

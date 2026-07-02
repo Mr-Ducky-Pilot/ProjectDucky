@@ -14,8 +14,12 @@
 		{ name: 'Amsterdam', code: 'AMS', lat: 52.309, lon: 4.764 },
 		{ name: 'Singapore', code: 'SIN', lat: 1.359, lon: 103.989 },
 		{ name: 'Toronto Pearson', code: 'YYZ', lat: 43.677, lon: -79.630 },
-		{ name: 'Paris CDG', code: 'CDG', lat: 49.009, lon: 2.548 }
+		{ name: 'Paris CDG', code: 'CDG', lat: 49.009, lon: 2.548 },
+		{ name: 'Munich', code: 'MUC', lat: 48.354, lon: 11.786 },
+		{ name: 'Frankfurt', code: 'FRA', lat: 50.033, lon: 8.570 }
 	];
+
+	const MAX_FAILURES = 3;
 
 	const RADAR_RANGE_NM = 50;
 	const RADAR_RANGE_KM = RADAR_RANGE_NM * 1.852;
@@ -39,6 +43,9 @@
 	let lastUpdate = $state<Date | null>(null);
 	let sweepAngle = $state(0);
 	let canvas = $state<HTMLCanvasElement | null>(null);
+	let consecutiveFailures = $state(0);
+	let stalled = $state(false);
+	let fetchTimer: ReturnType<typeof setInterval> | null = null;
 
 	// ── Maths helpers ─────────────────────────────────────────────────────────
 	function distKm(lat1: number, lon1: number, lat2: number, lon2: number) {
@@ -66,12 +73,16 @@
 	}
 
 	// ── API fetch ─────────────────────────────────────────────────────────────
+	// Goes through /api/flights (server-side proxy) — opendata.adsb.fi sends no
+	// CORS header, so a direct browser fetch is blocked in every environment,
+	// not just dev.
 	async function fetchFlights() {
+		if (stalled) return;
 		loading = true;
 		fetchError = null;
 		try {
 			const res = await fetch(
-				`https://opendata.adsb.fi/api/v2/lat/${airport.lat}/lon/${airport.lon}/dist/${RADAR_RANGE_NM}`,
+				`/api/flights?lat=${airport.lat}&lon=${airport.lon}&dist=${RADAR_RANGE_NM}`,
 				{ signal: AbortSignal.timeout(6000) }
 			);
 			if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -102,10 +113,27 @@
 				.slice(0, 60);
 
 			lastUpdate = new Date();
+			consecutiveFailures = 0;
 		} catch (e) {
 			fetchError = e instanceof Error ? e.message : 'Fetch failed';
+			consecutiveFailures++;
+			if (consecutiveFailures >= MAX_FAILURES) {
+				stalled = true;
+				if (fetchTimer) {
+					clearInterval(fetchTimer);
+					fetchTimer = null;
+				}
+			}
 		}
 		loading = false;
+	}
+
+	function retry() {
+		stalled = false;
+		consecutiveFailures = 0;
+		fetchError = null;
+		fetchFlights();
+		if (!fetchTimer) fetchTimer = setInterval(fetchFlights, 2000);
 	}
 
 	// ── Canvas drawing ────────────────────────────────────────────────────────
@@ -241,11 +269,11 @@
 		animate();
 
 		fetchFlights();
-		const fetchTimer = setInterval(fetchFlights, 2000);
+		fetchTimer = setInterval(fetchFlights, 2000);
 
 		return () => {
 			cancelAnimationFrame(animFrame);
-			clearInterval(fetchTimer);
+			if (fetchTimer) clearInterval(fetchTimer);
 		};
 	});
 
@@ -254,7 +282,11 @@
 		if (found) {
 			airport = found;
 			planes = [];
-			fetchFlights();
+			if (stalled) {
+				retry();
+			} else {
+				fetchFlights();
+			}
 		}
 	}
 
@@ -303,10 +335,22 @@
 		</div>
 	</div>
 
-	{#if fetchError}
+	{#if stalled}
+		<div class="flex flex-col items-center gap-2 rounded-2xl p-4 text-center text-sm font-bold"
+			style="background: color-mix(in srgb, var(--color-sunset-coral) 10%, transparent); color: var(--color-sunset-coral)">
+			<p>Couldn't reach flight data after {MAX_FAILURES} tries ({fetchError}). Check your internet connection.</p>
+			<button
+				type="button"
+				onclick={retry}
+				class="rounded-full bg-(--color-sunset-coral) px-4 py-2 text-xs font-extrabold text-white"
+			>
+				↻ Retry
+			</button>
+		</div>
+	{:else if fetchError}
 		<div class="rounded-2xl p-3 text-center text-sm font-bold"
 			style="background: color-mix(in srgb, var(--color-sunset-coral) 10%, transparent); color: var(--color-sunset-coral)">
-			Couldn't reach flight data: {fetchError}. Check your internet connection.
+			Couldn't reach flight data: {fetchError}. Retrying… (attempt {consecutiveFailures}/{MAX_FAILURES})
 		</div>
 	{/if}
 

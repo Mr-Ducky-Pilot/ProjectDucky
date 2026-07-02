@@ -4,6 +4,7 @@
 	import YourTurn from '$lib/components/YourTurn.svelte';
 	import LedMatrix from '$lib/components/LedMatrix.svelte';
 	import { pet, updatePersonality } from '$lib/stores/pet';
+	import { spriteFor } from '$lib/data/petSprites';
 	import type { Mission } from '$lib/missions/types';
 
 	type Props = { complete: () => void; mission: Mission };
@@ -31,7 +32,12 @@
 		(FACE_BITS[face] || FACE_BITS.happy).replace(/:/g, '').split('').map((c) => c === '1')
 	);
 
+	const speciesBits = $derived(
+		spriteFor($pet.species).join('').split('').map((c) => c === '9')
+	);
+
 	const safe = (s: string) => s.replace(/"/g, '');
+	const speciesImage = $derived(spriteFor($pet.species).join(':'));
 	const code = $derived(`from microbit import *
 import music
 
@@ -43,7 +49,10 @@ FACES = {
     'sleep': Image("00000:99099:00000:09990:00000"),
     'duck':  Image("09900:99990:99999:09990:00000"),
 }
+SPECIES_ICON = Image("${speciesImage}")
 
+display.show(SPECIES_ICON)
+sleep(500)
 display.show(FACES['${safe(face)}'])
 sleep(500)
 music.play([${tone
@@ -59,6 +68,10 @@ while True:
 <div class="flex flex-col gap-5">
 	<div class="flex items-center gap-4 rounded-3xl bg-egg-cream p-5 shadow-soft">
 		<PetAvatar size={120} mood="excited" />
+		<div class="flex flex-col items-center gap-1">
+			<LedMatrix bits={speciesBits} size={80} color="#7ad44b" />
+			<span class="text-xs font-bold text-night-soft">boot icon</span>
+		</div>
 		<LedMatrix {bits} size={120} color="#ffd23a" />
 	</div>
 

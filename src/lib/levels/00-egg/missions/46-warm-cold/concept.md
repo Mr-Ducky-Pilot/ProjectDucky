@@ -15,3 +15,10 @@ Both are right, just measuring different things.
 
 > Two ducks side-by-side should agree. If they don't, one might be sitting in
 > sunlight or near a heat source.
+
+### Upgrading to a real sensor
+
+Clip an external Grove Temperature Sensor to pin 1 and Ducky notices — it
+automatically trusts the real thermistor over its own CPU guess, and this
+card will show both numbers side by side so you can see exactly how far off
+the estimate was.

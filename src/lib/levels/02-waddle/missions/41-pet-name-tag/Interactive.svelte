@@ -18,7 +18,7 @@ GREETING = "___(Hi I am)"
 
 while True:
     if button_b.was_pressed():
-        display.scroll(GREETING + " " + NAME)
+        display.scroll(GREETING + " " + NAME)   # + joins strings together, end to end
     sleep(50)`);
 
 	let code = $state('');

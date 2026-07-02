@@ -16,11 +16,11 @@ last_jump = 0
 
 while True:
     z = accelerometer.get_z()
-    now = running_time()
-    if z > JUMP and now - last_jump > COOLDOWN:
-        count += 1
+    now = running_time()               # milliseconds since the board booted
+    if z > JUMP and now - last_jump > COOLDOWN:   # "and" needs both sides true
+        count += 1                     # shortcut for count = count + 1
         last_jump = now
-        display.show(str(count % 10))
+        display.show(str(count % 10))  # % keeps just the last digit (0-9)
     sleep(20)`;
 
 	let code = $state('');

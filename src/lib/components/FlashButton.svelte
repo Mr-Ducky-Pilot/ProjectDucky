@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { connection } from '$lib/stores/connection';
 	import { setMood, say } from '$lib/stores/ducky';
-	import { buildL0PresetHex, buildL1Hex } from '$lib/firmware/build';
+	import { buildDuckyOsHex } from '$lib/firmware/build';
 	import { petLabel } from '$lib/stores/pet';
 	import { MOOD_PALETTE } from '$lib/data/moodPalette';
 
@@ -27,13 +27,20 @@
 	let booting = $state(false);
 	let localError = $state<string | null>(null);
 
-	// For L0 missions each preset gets its own firmware tag; L1 missions share 'l1'.
-	const firmwareTag = $derived(preset ? `l0:${preset}` : 'l1');
+	// One shared hex covers every L0 + L1 mission — presets switch live via P:,
+	// so this tag never changes per-mission (unlike the old l0:<preset>/l1 split).
+	const firmwareTag = 'ducky-os';
 	const alreadyLoaded = $derived(
 		$conn.status === 'connected' && $conn.lastFlashedFirmware === firmwareTag
 	);
 
-	async function activate() {
+	/**
+	 * Activate `preset` on an already-flashed board. `silent` skips the
+	 * celebration treatment (mood/RGB/sound/onFlashed) — used when this fires
+	 * automatically on mission navigation rather than a deliberate click, so
+	 * browsing missions doesn't spam celebrations or mark them complete.
+	 */
+	async function activate(opts: { silent?: boolean } = {}) {
 		booting = true;
 		try {
 			if (preset) {
@@ -45,6 +52,7 @@
 			// non-fatal — board is live
 		}
 		booting = false;
+		if (opts.silent) return;
 		justFlashed = true;
 		setMood('celebrating');
 		say('Done — try it out!', 'celebrating');
@@ -70,7 +78,7 @@
 		building = true;
 		let hex: ArrayBuffer;
 		try {
-			hex = preset ? await buildL0PresetHex(preset) : await buildL1Hex();
+			hex = await buildDuckyOsHex();
 		} catch (err) {
 			localError = err instanceof Error ? err.message : 'Failed to build firmware.';
 			setMood('sad');
@@ -79,7 +87,7 @@
 		}
 		building = false;
 
-		await connection.flash(hex, firmwareTag as 'l1' | `l0:${string}`);
+		await connection.flash(hex, firmwareTag);
 		const after = connection.getState();
 		if (after.status === 'error') {
 			localError = after.error;
@@ -117,6 +125,27 @@
 	const busy = $derived(
 		building || booting || $conn.status === 'flashing' || $conn.status === 'requesting'
 	);
+
+	// Auto-follow: once connected, keep the physical board's active preset in
+	// sync with whichever mission is on screen — no click needed. First time
+	// this session it does a real flash (and celebrates); after that it's just
+	// an instant, silent P:<preset> switch. We assume the device stays
+	// connected while the user is browsing missions (per product decision) —
+	// this never attempts connection.connect() itself, since requesting a
+	// WebUSB device requires a real user gesture.
+	const autoKey = $derived(preset ?? '__l1__');
+	let lastAutoKey: string | null = null;
+	$effect(() => {
+		const key = autoKey;
+		const connected = $conn.status === 'connected';
+		if (!connected || busy || key === lastAutoKey) return;
+		lastAutoKey = key;
+		if (alreadyLoaded) {
+			void activate({ silent: true });
+		} else {
+			void flash();
+		}
+	});
 </script>
 
 <div class="flex flex-col items-start gap-2">
@@ -133,7 +162,7 @@
 		{:else if $conn.status === 'flashing'}
 			Flashing… {Math.round(($conn.flash?.pct ?? 0) * 100)}%
 		{:else if booting}
-			{alreadyLoaded ? 'Activating…' : `Booting ${$petLabel}…`}
+			{alreadyLoaded ? 'Switching…' : `Booting ${$petLabel}…`}
 		{:else if justFlashed}
 			✅ {flashedLabel}
 		{:else if alreadyLoaded && preset}

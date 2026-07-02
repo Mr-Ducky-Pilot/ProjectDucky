@@ -12,11 +12,11 @@
 while True:
     temp = temperature()
 
-    if temp > ___(28):
+    if temp > ___(28):           # checked first — only runs when this is true
         display.show(Image.HAPPY)
-    elif temp < ___(20):
+    elif temp < ___(20):         # "else if" — checked only if the first was false
         display.show(Image.SAD)
-    else:
+    else:                        # runs when neither condition above was true
         display.show(Image.SURPRISED)
 
     sleep(500)`;

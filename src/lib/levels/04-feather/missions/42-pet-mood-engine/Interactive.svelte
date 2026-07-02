@@ -33,7 +33,7 @@
 	const code = $derived.by(() => {
 		const checks = `def check():
     l = display.read_light_level()
-    t = temperature()
+    t = read_temp()
     g = accelerometer.get_strength()
     try: m = microphone.sound_level()
     except: m = 0
@@ -49,6 +49,7 @@
 			.map((r) => `    ('${r.when}', '${r.mood}'),`)
 			.join('\n');
 		return `from microbit import *
+import math
 
 FACES = {
     'happy': Image.HAPPY, 'sad': Image.SAD, 'wink': Image.SURPRISED,
@@ -58,6 +59,18 @@ FACES = {
 RULES = [
 ${ruleLines}
 ]
+
+def read_temp():
+    # Prefer a real Grove Temperature Sensor on pin 1, if one's connected;
+    # fall back to the chip's own CPU-proxy reading otherwise.
+    try:
+        v = pin1.read_analog()
+        if 0 < v < 1023:
+            r = 10000.0 * (1023.0 / v - 1.0)
+            return 1.0 / (math.log(r / 10000.0) / 4250.0 + 1.0 / 298.15) - 273.15
+    except:
+        pass
+    return temperature()
 
 ${checks}
 

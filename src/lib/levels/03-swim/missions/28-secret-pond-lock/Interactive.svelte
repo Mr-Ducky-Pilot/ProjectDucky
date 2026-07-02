@@ -45,6 +45,12 @@ while True:
 
 	let code = $state('');
 	let allFilled = $state(false);
+
+	const mlSuggestions = {
+		4: `entry.append(0)\ndisplay.show('0')`,
+		5: `entry.append(1)\ndisplay.show('1')`,
+		6: `if entry == COMBO:\n    unlock()\nelse:\n    reject()\nentry = []`
+	};
 </script>
 
 <div class="flex flex-col gap-5">
@@ -69,7 +75,7 @@ while True:
 		</div>
 	</div>
 
-	<CodeEditor template={TEMPLATE} bind:code bind:allFilled />
+	<CodeEditor template={TEMPLATE} bind:code bind:allFilled {mlSuggestions} />
 
 	<FlashCodeButton {code} disabled={!allFilled} onFlashed={complete} />
 

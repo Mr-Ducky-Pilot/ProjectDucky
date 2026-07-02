@@ -9,15 +9,15 @@
 
 	const TEMPLATE = `from microbit import *
 
-count = 0
+count = 0                        # a variable — a labelled box that holds a number
 
-while True:
-    sound = microphone.sound_level()
+while True:                      # repeat everything indented below, forever
+    sound = microphone.sound_level()   # ask the mic how loud it is right now (0-255)
 
-    if sound > ___(150):
+    if sound > ___(150):         # only the indented lines below run when this is true
         count = count + ___(1)
-        display.scroll(str(count))
-        sleep(___(500))`;
+        display.scroll(str(count))     # str() turns the number into text so it can scroll
+        sleep(___(500))          # pause this many milliseconds before checking again`;
 
 	let code = $state('');
 	let allFilled = $state(false);

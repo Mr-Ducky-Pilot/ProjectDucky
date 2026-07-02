@@ -51,6 +51,21 @@ while True:
 
 	let code = $state('');
 	let allFilled = $state(false);
+
+	const mlSuggestions = {
+		1: `my_lit = min(5, int((my_score / WIN) * 5))
+their_lit = min(5, int((their_score / WIN) * 5))
+for row in range(5):
+    b = 9 if (4 - row) < my_lit else 0
+    display.set_pixel(0, row, b)
+    display.set_pixel(1, row, b)
+    b2 = 4 if (4 - row) < their_lit else 0
+    display.set_pixel(3, row, b2)
+    display.set_pixel(4, row, b2)`,
+		2: `their_score = int(msg.split(":")[1])`,
+		3: `radio.send("score:" + str(my_score))\nlast_broadcast = now`,
+		4: `display.scroll("You win!")`
+	};
 </script>
 
 <div class="flex flex-col gap-5">
@@ -63,7 +78,7 @@ while True:
 		Use <code>display.set_pixel(col, row, brightness)</code> to light individual LEDs.
 	</div>
 
-	<CodeEditor template={TEMPLATE} bind:code bind:allFilled />
+	<CodeEditor template={TEMPLATE} bind:code bind:allFilled {mlSuggestions} />
 
 	<FlashCodeButton {code} disabled={!allFilled} onFlashed={complete} />
 

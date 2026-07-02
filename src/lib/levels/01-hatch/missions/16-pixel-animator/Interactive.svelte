@@ -4,6 +4,7 @@
 	import YourTurn from '$lib/components/YourTurn.svelte';
 	import { connection } from '$lib/stores/connection';
 	import { setMood } from '$lib/stores/ducky';
+	import { onDestroy } from 'svelte';
 
 	const FRAME_COUNT = 3;
 	let frames = $state<boolean[][]>(Array.from({ length: FRAME_COUNT }, () => Array(25).fill(false)));
@@ -57,6 +58,14 @@
 	$effect(() => {
 		startPreview();
 		return stopPreview;
+	});
+
+	// playInterval drives the PHYSICAL board (not just the on-screen preview) —
+	// if this isn't cleared on unmount, it keeps sending stale matrix frames to
+	// the board over whatever mission the user navigates to next.
+	onDestroy(() => {
+		if (playInterval) clearInterval(playInterval);
+		if (playing) void connection.send({ type: 'quit' }).catch(() => {});
 	});
 </script>
 

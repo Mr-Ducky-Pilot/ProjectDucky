@@ -14,7 +14,7 @@ while True:
     light = display.read_light_level()
 
     if light < ___(100):
-        for i in range(___(3)):
+        for i in range(___(3)):  # repeat the indented lines below this many times
             display.show(Image.ALL_LEDS)
             sleep(200)
             display.clear()

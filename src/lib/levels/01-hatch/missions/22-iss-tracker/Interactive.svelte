@@ -32,6 +32,51 @@
 		};
 	}
 
+	// ── Day/night terminator ────────────────────────────────────────────────
+	// Standard approximate solar-position formulas: declination from day-of-
+	// year, subsolar longitude from UTC time. Same "sunlit vs eclipsed" idea
+	// already shown for the ISS itself, extended to shade the whole map.
+	let nightLayer: HTMLCanvasElement | null = null;
+	function subsolarPoint(d: Date): { lat: number; lon: number } {
+		const start = Date.UTC(d.getUTCFullYear(), 0, 0);
+		const dayOfYear = Math.floor((d.getTime() - start) / 86_400_000);
+		const decl = -23.44 * Math.cos((2 * Math.PI / 365) * (dayOfYear + 10));
+		const utcHours = d.getUTCHours() + d.getUTCMinutes() / 60 + d.getUTCSeconds() / 3600;
+		const lon = -(utcHours - 12) * 15;
+		return { lat: decl, lon: ((lon + 540) % 360) - 180 };
+	}
+	function buildNightLayer() {
+		const off = document.createElement('canvas');
+		off.width = W;
+		off.height = H;
+		const octx = off.getContext('2d');
+		if (!octx) return null;
+		const { lat: subLat, lon: subLon } = subsolarPoint(new Date());
+		const subLatR = (subLat * Math.PI) / 180;
+		const subLonR = (subLon * Math.PI) / 180;
+		const img = octx.createImageData(W, H);
+		for (let py = 0; py < H; py++) {
+			const lat = 90 - (py / H) * 180;
+			const latR = (lat * Math.PI) / 180;
+			for (let px = 0; px < W; px++) {
+				const lon = (px / W) * 360 - 180;
+				const lonR = (lon * Math.PI) / 180;
+				const cosZ =
+					Math.sin(latR) * Math.sin(subLatR) +
+					Math.cos(latR) * Math.cos(subLatR) * Math.cos(lonR - subLonR);
+				// cosZ > 0.1 = full day, < -0.1 = full night, between = twilight
+				const night = Math.max(0, Math.min(1, (0.1 - cosZ) / 0.2));
+				const idx = (py * W + px) * 4;
+				img.data[idx] = 5;
+				img.data[idx + 1] = 8;
+				img.data[idx + 2] = 20;
+				img.data[idx + 3] = Math.round(night * 165);
+			}
+		}
+		octx.putImageData(img, 0, 0);
+		return off;
+	}
+
 	// Simplified continent outlines as polygon arrays [lon, lat]
 	// Using just a very rough outline of major landmasses to keep file size small
 	const LAND_PATCHES: [number, number][][] = [
@@ -58,12 +103,24 @@
 
 		ctx.clearRect(0, 0, W, H);
 
-		// Ocean background
-		ctx.fillStyle = '#0a1628';
+		// Ocean: deep-space-to-ocean vertical gradient instead of flat navy
+		const ocean = ctx.createLinearGradient(0, 0, 0, H);
+		ocean.addColorStop(0, '#081a33');
+		ocean.addColorStop(0.5, '#0d2a4d');
+		ocean.addColorStop(1, '#081a33');
+		ctx.fillStyle = ocean;
 		ctx.fillRect(0, 0, W, H);
 
-		// Latitude grid lines
-		ctx.strokeStyle = '#111e30';
+		// Faint starfield above/below the map edges reads as "space", not noise
+		ctx.fillStyle = 'rgba(255,255,255,0.35)';
+		for (let i = 0; i < 40; i++) {
+			const sx = (i * 97) % W;
+			const sy = (i * 53) % H;
+			ctx.fillRect(sx, sy, 1, 1);
+		}
+
+		// Latitude/longitude grid, subtler than before
+		ctx.strokeStyle = 'rgba(255,255,255,0.06)';
 		ctx.lineWidth = 0.5;
 		for (let lat = -60; lat <= 60; lat += 30) {
 			const y = ((90 - lat) / 180) * H;
@@ -72,7 +129,6 @@
 			ctx.lineTo(W, y);
 			ctx.stroke();
 		}
-		// Longitude grid lines
 		for (let lon = -180; lon <= 180; lon += 60) {
 			const x = ((lon + 180) / 360) * W;
 			ctx.beginPath();
@@ -81,10 +137,13 @@
 			ctx.stroke();
 		}
 
-		// Land patches
-		ctx.fillStyle = '#1a3050';
-		ctx.strokeStyle = '#253d60';
-		ctx.lineWidth = 0.5;
+		// Land patches with a soft green gradient (satellite-ish tone) + glow edge
+		const land = ctx.createLinearGradient(0, 0, 0, H);
+		land.addColorStop(0, '#3a6b45');
+		land.addColorStop(1, '#2a5238');
+		ctx.fillStyle = land;
+		ctx.strokeStyle = 'rgba(150,220,170,0.35)';
+		ctx.lineWidth = 0.75;
 		for (const patch of LAND_PATCHES) {
 			ctx.beginPath();
 			for (let i = 0; i < patch.length; i++) {
@@ -98,47 +157,75 @@
 			ctx.stroke();
 		}
 
-		// Trail
+		// Day/night terminator overlay, recomputed on each refresh
+		if (!nightLayer) nightLayer = buildNightLayer();
+		if (nightLayer) ctx.drawImage(nightLayer, 0, 0);
+
+		// Trail with a soft glow, fading toward the oldest point
 		if (trail.length > 1) {
 			for (let i = 1; i < trail.length; i++) {
 				const prev = latLonToXY(trail[i - 1].lat, trail[i - 1].lon);
 				const curr = latLonToXY(trail[i].lat, trail[i].lon);
-				// Don't draw line if wrapping across antimeridian
 				if (Math.abs(trail[i].lon - trail[i - 1].lon) < 90) {
 					const alpha = i / trail.length;
-					ctx.strokeStyle = `rgba(255,210,58,${alpha * 0.7})`;
-					ctx.lineWidth = 1.5;
+					ctx.save();
+					ctx.shadowColor = '#ffd23a';
+					ctx.shadowBlur = 4;
+					ctx.strokeStyle = `rgba(255,210,58,${alpha * 0.8})`;
+					ctx.lineWidth = 2;
+					ctx.lineCap = 'round';
 					ctx.beginPath();
 					ctx.moveTo(prev.x, prev.y);
 					ctx.lineTo(curr.x, curr.y);
 					ctx.stroke();
+					ctx.restore();
 				}
 			}
 		}
 
-		// ISS dot
+		// ISS marker: pulsing glow rings + bright core
 		if (issData) {
 			const { x, y } = latLonToXY(issData.latitude, issData.longitude);
+			const pulse = 0.5 + 0.5 * Math.sin(Date.now() / 400);
+
+			ctx.save();
+			ctx.strokeStyle = `rgba(255,210,58,${0.25 + pulse * 0.25})`;
+			ctx.lineWidth = 1;
+			ctx.beginPath();
+			ctx.arc(x, y, 9 + pulse * 3, 0, Math.PI * 2);
+			ctx.stroke();
+
 			ctx.fillStyle = '#ffd23a';
 			ctx.shadowColor = '#ffd23a';
-			ctx.shadowBlur = 12;
+			ctx.shadowBlur = 14;
 			ctx.beginPath();
-			ctx.arc(x, y, 5, 0, Math.PI * 2);
+			ctx.arc(x, y, 4.5, 0, Math.PI * 2);
 			ctx.fill();
 			ctx.shadowBlur = 0;
+			ctx.fillStyle = '#fff8ec';
+			ctx.beginPath();
+			ctx.arc(x, y, 1.5, 0, Math.PI * 2);
+			ctx.fill();
+			ctx.restore();
 
-			// "ISS" label
 			ctx.fillStyle = '#ffd23a';
 			ctx.font = 'bold 9px monospace';
 			ctx.textAlign = 'left';
-			ctx.fillText('ISS', x + 7, y + 3);
+			ctx.fillText('ISS', x + 10, y + 3);
 		}
 
 		// Equator label
-		ctx.fillStyle = '#1e3d5c';
+		ctx.fillStyle = 'rgba(255,255,255,0.3)';
 		ctx.font = '8px monospace';
 		ctx.textAlign = 'right';
 		ctx.fillText('Equator', W - 2, H / 2 - 2);
+
+		// Vignette frame for a bit of depth at the canvas edges
+		const vignette = ctx.createRadialGradient(W / 2, H / 2, H * 0.3, W / 2, H / 2, H * 0.9);
+		vignette.addColorStop(0, 'rgba(0,0,0,0)');
+		vignette.addColorStop(1, 'rgba(0,0,0,0.35)');
+		ctx.fillStyle = vignette;
+		ctx.fillRect(0, 0, W, H);
 	}
 
 	async function fetchIss() {
@@ -153,6 +240,7 @@
 			issData = data as IssData;
 			trail = [...trail, { lat: data.latitude, lon: data.longitude }].slice(-40);
 			lastUpdate = new Date();
+			nightLayer = null; // recompute terminator with fresh sun position
 			drawMap();
 		} catch (e) {
 			fetchError = e instanceof Error ? e.message : 'Fetch failed';
@@ -163,7 +251,21 @@
 	onMount(() => {
 		fetchIss();
 		const timer = setInterval(fetchIss, 5000);
-		return () => clearInterval(timer);
+
+		// Separate rAF loop just for the ISS marker's pulse animation — the
+		// night-layer/land/trail redraw underneath is cheap to repeat since
+		// nightLayer is cached between data refreshes, not rebuilt per frame.
+		let animFrame: number;
+		function animate() {
+			drawMap();
+			animFrame = requestAnimationFrame(animate);
+		}
+		animFrame = requestAnimationFrame(animate);
+
+		return () => {
+			clearInterval(timer);
+			cancelAnimationFrame(animFrame);
+		};
 	});
 
 	const speedKmh = $derived(issData ? Math.round(issData.velocity) : 0);

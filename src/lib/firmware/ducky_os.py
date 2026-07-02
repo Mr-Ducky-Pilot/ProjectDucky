@@ -52,6 +52,15 @@ MOOD_RGB = {
 MOOD_NAMES = ('happy', 'sad', 'wink', 'sleep', 'dizzy')  # index matches mood-badge's MOODS tuple
 SOUND_NAMES = ('GIGGLE', 'HAPPY', 'HELLO', 'MYSTERIOUS', 'SAD', 'SLIDE', 'SOARING', 'SPRING', 'TWINKLE', 'YAWN')
 
+# Expanding-diamond wipe, played when switching missions (P:) or quitting (Q)
+# so the physical board visibly transitions instead of jump-cutting.
+IRIS = (
+    Image("00000:00000:00900:00000:00000"),
+    Image("00000:00900:09990:00900:00000"),
+    Image("00900:09990:99999:09990:00900"),
+    Image("09990:99999:99999:99999:09990"),
+)
+
 ARROWS = [
     Image("00900:09990:90909:00900:00900"),   # N
     Image("00999:00099:00909:09000:90000"),   # NE
@@ -64,9 +73,11 @@ ARROWS = [
 ]
 
 NOTE_FREQ = {
+    'C3': 131, 'D3': 147, 'E3': 165, 'F3': 175, 'G3': 196, 'A3': 220, 'B3': 247,
     'C4': 262, 'C#4': 277, 'D4': 294, 'D#4': 311, 'E4': 330,
     'F4': 349, 'F#4': 370, 'G4': 392, 'G#4': 415, 'A4': 440,
     'A#4': 466, 'B4': 494, 'C5': 523, 'D5': 587, 'E5': 659,
+    'A5': 880, 'B5': 988,
 }
 
 # External Grove hardware pins (both optional — code degrades gracefully if absent)
@@ -81,7 +92,7 @@ PRESET_LIST = (
     'whisper', 'touch-logo', 'compass-quest',
     'sky-radar', 'iss-orbit',
     'breathe', 'sunrise', 'dice', 'mood-badge',
-    'bubble', 'firefly', 'warm-cold', 'ambient-temp',
+    'bubble', 'firefly', 'warm-cold',
 )
 MENU_ICONS = {
     'heartbeat':     Image("09090:09090:09990:00900:00000"),
@@ -100,7 +111,6 @@ MENU_ICONS = {
     'bubble':        Image("09990:90009:90009:09990:00000"),
     'firefly':       Image("00000:00900:09090:00900:00000"),
     'warm-cold':     Image("00900:09990:09090:09090:09990"),
-    'ambient-temp':  Image("00900:09090:09090:09090:99999"),
 }
 # L0-MENU-ONLY:END
 
@@ -194,6 +204,12 @@ def read_ambient_c():
     except:
         return None
 
+def iris(opening):
+    frames = IRIS if opening else tuple(reversed(IRIS))
+    for f in frames:
+        display.show(f)
+        sleep(45)
+
 # L0-MENU-ONLY:BEGIN
 def show_menu():
     display.show(MENU_ICONS.get(PRESET_LIST[menu_idx], FACES['duck']))
@@ -245,6 +261,7 @@ def handle(line):
             elif op == '!':
                 subs.discard(sname)
     elif c == 'P':
+        iris(True)
         preset = rest
         state = {}
         menu_mode = False
@@ -255,6 +272,7 @@ def handle(line):
         except:
             pass
     elif c == 'Q':
+        iris(False)
         preset = None
         state = {}
         display.clear()
@@ -446,10 +464,14 @@ def tick():
     elif preset == 'warm-cold':
         if n - state.get('t', 0) > 600:
             state['t'] = n
-            try:
-                tc = temperature()
-            except:
-                tc = 20
+            # Prefer the real external sensor when it's wired up; fall back
+            # to the CPU-proxy reading otherwise so the mission still works.
+            tc = read_ambient_c()
+            if tc is None:
+                try:
+                    tc = temperature()
+                except:
+                    tc = 20
             lit = max(0, min(5, (tc - 18) // 3 + 1))
             rows = ["99999" if (4 - r) < lit else "00000" for r in range(5)]
             display.show(Image(":".join(rows)))
@@ -458,16 +480,6 @@ def tick():
         if n - state.get('t', 0) > 1000:
             state['t'] = n
             display.show(FACES['duck'])
-
-    elif preset == 'ambient-temp':
-        if n - state.get('t', 0) > 600:
-            state['t'] = n
-            c = read_ambient_c()
-            if c is None:
-                c = 20
-            lit = max(0, min(5, (c - 18) // 3 + 1))
-            rows = ["99999" if (4 - r) < lit else "00000" for r in range(5)]
-            display.show(Image(":".join(rows)))
 
 
 # --- Boot ---

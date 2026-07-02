@@ -136,7 +136,7 @@ Single universal-listener Python script. Key behaviours:
 | `whisper` | 07 | Mic bargraph on LED matrix | sound burst |
 | `touch-logo` | 08 | 3-note descending quack + happy face on logo touch | duck |
 | `compass-quest` | 09 | 8-direction arrow on LED matrix | N arrow |
-| `ambient-temp` | 47 | Bargraph from external Grove thermistor (P1) | thermometer |
+| `warm-cold` | 46 | Bargraph from Grove thermistor (P1) if connected, else CPU `temperature()` | thermometer |
 
 ---
 
@@ -173,20 +173,42 @@ Mission 01 has no preset — its Interactive handles flash + send inline.
 
 ## Hex Assembly Flow
 
-**L0/L1 (Ducky OS firmware) — smart skip:**
+**L0/L1 (Ducky OS firmware) — one shared hex, auto-follow:**
+
+`buildDuckyOsHex()` (`src/lib/firmware/build.ts`) assembles ONE hex for the
+whole of L0 + L1: the standalone on-board menu is stripped (irrelevant once
+the browser is driving), but every preset's `tick()` branch stays intact, so
+any preset is reachable via `P:<preset>` without reflashing. This replaced an
+earlier per-mission-hex split (`buildL0PresetHex`/`buildL1Hex`, one minimal
+hex per preset) that existed only because the pre-OLED-removal firmware was
+too close to the 20KB budget to afford keeping every preset in one build —
+now there's ~6KB of headroom, so one shared hex is affordable again and
+avoids reflashing on every mission.
+
+`FlashButton` auto-follows the current mission via an internal `$effect`
+keyed on its `preset` prop — no click required once connected (assumes the
+device stays connected while the user browses missions):
 ```
-FlashButton click
-  IF connected AND lastFlashedFirmware === 'ducky-os':
-    → skip flash entirely (near-instant)
-    → connection.send({type:'preset', name})  or matrix clear
-    → button label shows "Activate ▶" instead of "Send to Ducky"
-  ELSE:
-    → buildDuckyHex()              fetch runtime (cached) + assemble hex (cached)
+Mission page renders with connected device
+  IF lastFlashedFirmware === 'ducky-os':
+    → connection.send({type:'preset', name})  or matrix clear (silent — no
+      celebration/mood/onFlashed, so passive browsing doesn't spam reactions
+      or mark missions complete)
+  ELSE (first mission this session):
+    → buildDuckyOsHex()             fetch runtime (cached) + assemble hex (cached)
     → connection.flash(buffer, 'ducky-os')  DAPLink flashes, board resets
-    → connection.waitForReady()    waits for "<L Ducky OS ready>" (5s timeout)
+    → connection.waitForReady()     waits for "<L Ducky OS ready>" (5s timeout)
     → connection.send({type:'preset', name})  or matrix clear
     → sets lastFlashedFirmware = 'ducky-os' in store
+    → celebration treatment (mood, RGB, onFlashed) — this one's a real event
 ```
+A manual click on the button still works (e.g. to retry after an error) and
+goes through the same `flash()`/`activate()` path.
+
+The firmware itself plays a short expanding-diamond wipe animation on the LED
+matrix (`iris()` in `ducky_os.py`) whenever a preset switches (`P:`, opens)
+or the board quits back to idle (`Q`, closes) — so mission-to-mission
+transitions are visible on the physical board, not a silent jump-cut.
 
 Level 0/1 overview page also shows a "Flash Ducky" card — flash once there and all missions are instant.
 
@@ -273,7 +295,7 @@ Font: `font-display` = Nunito (rounded, kid-friendly). `font-mono` = JetBrains M
 - All missions fully wired with Browser Interactive + firmware presets
 - `code.md` + `concept.md` explainer cards on every mission
 - `ducky_os.py` firmware: all presets implemented at 100% LED brightness (brightness 9)
-- FlashButton → buildDuckyHex → waitForReady → P:`<preset>` flow
+- FlashButton auto-follows the current mission (buildDuckyOsHex → waitForReady → P:`<preset>`), no click needed once connected
 - Sensor auto-resubscribe after flash via `connection.onReady()`
 - Board cleanup (`Q` command) sent on mission navigation
 - Double-press A/B navigation (AA = prev, BB = next within 2s — single press passes through to game)

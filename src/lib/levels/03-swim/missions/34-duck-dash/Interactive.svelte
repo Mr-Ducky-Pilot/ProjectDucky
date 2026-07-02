@@ -61,6 +61,34 @@ while True:
 	let code = $state('');
 	let allFilled = $state(false);
 
+	const mlSuggestions = {
+		2: `if ax > 400:
+    my_x = min(4, my_x + 1)
+if ax < -400:
+    my_x = max(0, my_x - 1)
+if ay > 400:
+    my_y = min(4, my_y + 1)
+if ay < -400:
+    my_y = max(0, my_y - 1)`,
+		3: `for drop in drops:
+    display.set_pixel(drop[0], drop[1], 3)
+if their_x >= 0:
+    display.set_pixel(their_x, their_y, 6)
+display.set_pixel(my_x, my_y, 9)`,
+		4: `parts = msg.split(',')
+their_x = int(parts[0])
+their_y = int(parts[1])`,
+		5: `radio.send(str(my_x) + "," + str(my_y))
+last_tx = now
+log("pos:" + str(my_x) + "," + str(my_y))`,
+		6: `if [my_x, my_y] == drop:
+    drops.remove(drop)
+    drops.append([random.randint(0, 4), random.randint(0, 4)])
+    score += 1
+    log("score:" + str(score))
+    break`
+	};
+
 	// Live game state from board logs
 	type GameState = { myScore: number; myPos: [number, number] | null };
 	let gameState = $state<GameState>({ myScore: 0, myPos: null });
@@ -115,7 +143,7 @@ while True:
 		</div>
 	{/if}
 
-	<CodeEditor template={TEMPLATE} bind:code bind:allFilled />
+	<CodeEditor template={TEMPLATE} bind:code bind:allFilled {mlSuggestions} />
 
 	<FlashCodeButton {code} disabled={!allFilled} onFlashed={complete} />
 
