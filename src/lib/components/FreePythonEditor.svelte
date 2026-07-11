@@ -8,10 +8,6 @@
 
 	let textarea: HTMLTextAreaElement | undefined = $state();
 
-	$effect(() => {
-		if (!code) code = initial;
-	});
-
 	function resize() {
 		if (!textarea) return;
 		textarea.style.height = 'auto';
