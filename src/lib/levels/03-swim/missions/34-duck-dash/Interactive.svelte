@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import CodeEditor from '$lib/components/CodeEditor.svelte';
+	import RadioPairPreview from '$lib/components/RadioPairPreview.svelte';
 	import FlashCodeButton from '$lib/components/FlashCodeButton.svelte';
 	import SerialMonitor from '$lib/components/SerialMonitor.svelte';
 	import YourTurn from '$lib/components/YourTurn.svelte';
@@ -144,6 +145,8 @@ log("pos:" + str(my_x) + "," + str(my_y))`,
 	{/if}
 
 	<CodeEditor template={TEMPLATE} bind:code bind:allFilled {mlSuggestions} />
+
+	<RadioPairPreview {code} />
 
 	<FlashCodeButton {code} disabled={!allFilled} onFlashed={complete} />
 

@@ -16,6 +16,8 @@
 	const mission = $derived(data.mission);
 	const nextMission = $derived(data.nextMission);
 	const prevMission = $derived(data.prevMission);
+	const tutorial = $derived(data.tutorial);
+	const tourQS = $derived(tutorial ? '?tutorial=1' : '');
 
 	let Interactive = $state<Component | null>(null);
 
@@ -47,17 +49,18 @@
 			if (e.type !== 'button' || e.phase !== 'down') return;
 			if (mission.hardware.includes('buttons')) return;
 			const now = Date.now();
+			const qs = data.tutorial ? '?tutorial=1' : '';
 			if (e.button === 'B') {
 				if (now - lastB <= DOUBLE_MS && data.nextMission) {
 					lastB = 0;
-					void goto(`/mission/${data.nextMission.level}/${data.nextMission.id}`);
+					void goto(`/mission/${data.nextMission.level}/${data.nextMission.id}${qs}`);
 				} else {
 					lastB = now;
 				}
 			} else if (e.button === 'A') {
 				if (now - lastA <= DOUBLE_MS && data.prevMission) {
 					lastA = 0;
-					void goto(`/mission/${data.prevMission.level}/${data.prevMission.id}`);
+					void goto(`/mission/${data.prevMission.level}/${data.prevMission.id}${qs}`);
 				} else {
 					lastA = now;
 				}
@@ -74,15 +77,27 @@
 <section class="px-5 py-6 sm:py-10">
 	<div class="mx-auto max-w-5xl">
 		<div class="flex items-center gap-4">
-			<a
-				href="/level/{mission.level}"
-				class="text-sm font-bold text-(--color-pond-deep) no-underline hover:underline"
-			>
-				← Level {mission.level}
-			</a>
+			{#if tutorial}
+				<a
+					href="/tutorial"
+					class="text-sm font-bold text-(--color-pond-deep) no-underline hover:underline"
+				>
+					← Exit tour
+				</a>
+				<span class="rounded-full bg-(--color-duck-yellow)/20 px-2.5 py-1 text-xs font-bold text-(--color-night-ink)">
+					Stop {tutorial.index + 1} of {tutorial.total}
+				</span>
+			{:else}
+				<a
+					href="/level/{mission.level}"
+					class="text-sm font-bold text-(--color-pond-deep) no-underline hover:underline"
+				>
+					← Level {mission.level}
+				</a>
+			{/if}
 			{#if prevMission}
 				<a
-					href="/mission/{prevMission.level}/{prevMission.id}"
+					href="/mission/{prevMission.level}/{prevMission.id}{tourQS}"
 					class="text-sm text-(--color-night-soft) no-underline hover:text-(--color-pond-deep)"
 					title={prevMission.title}
 				>
@@ -91,7 +106,7 @@
 			{/if}
 			{#if nextMission}
 				<a
-					href="/mission/{nextMission.level}/{nextMission.id}"
+					href="/mission/{nextMission.level}/{nextMission.id}{tourQS}"
 					class="text-sm text-(--color-night-soft) no-underline hover:text-(--color-pond-deep)"
 					title={nextMission.title}
 				>
@@ -157,11 +172,15 @@
 					{/if}
 					{#if nextMission}
 						<a
-							href="/mission/{nextMission.level}/{nextMission.id}"
+							href="/mission/{nextMission.level}/{nextMission.id}{tourQS}"
 							onclick={complete}
 							class="pop-btn pop-btn--ghost no-underline"
 						>
 							Next: {nextMission.title} →
+						</a>
+					{:else if tutorial}
+						<a href="/tutorial" onclick={complete} class="pop-btn pop-btn--yellow no-underline">
+							🎉 Finish the tour
 						</a>
 					{:else}
 						<button type="button" onclick={complete} class="pop-btn pop-btn--ghost">

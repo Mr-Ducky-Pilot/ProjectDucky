@@ -1,6 +1,7 @@
 <script lang="ts">
 	import DuckShareLoader from '$lib/components/DuckShareLoader.svelte';
 	import FreePythonEditor from '$lib/components/FreePythonEditor.svelte';
+	import MicrobitPreview from '$lib/components/MicrobitPreview.svelte';
 	import FlashCodeButton from '$lib/components/FlashCodeButton.svelte';
 	import QrShareCard from '$lib/components/QrShareCard.svelte';
 	import PetAvatar from '$lib/components/PetAvatar.svelte';
@@ -41,7 +42,10 @@
 			</button>
 		</div>
 
-		<FreePythonEditor initial={code} bind:code />
+		<div class="grid gap-4 md:grid-cols-[1fr_auto]">
+			<FreePythonEditor initial={code} bind:code />
+			<div class="md:w-64"><MicrobitPreview {code} /></div>
+		</div>
 
 		<label class="block">
 			<span class="text-xs font-bold uppercase tracking-widest text-night-soft">Remix notes</span>

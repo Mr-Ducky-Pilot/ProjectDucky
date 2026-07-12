@@ -1,7 +1,8 @@
 import type { PetSpecies } from '$lib/stores/pet';
 
 /**
- * 5×5 pixel-art icons, one row of '0'/'1' per string, top row first.
+ * 5×5 pixel-art icons, one row of '0'-'9' brightness digits per string
+ * (matches ducky_os.py's Image string format), top row first.
  * Draft bitmaps — iterate visually (e.g. via LedMatrix.svelte in
  * /dev/components) before treating these as final art.
  *
@@ -17,7 +18,7 @@ import type { PetSpecies } from '$lib/stores/pet';
  * Species without an entry fall back to FALLBACK_SPRITE.
  */
 export const PET_SPRITES: Partial<Record<PetSpecies, string[]>> = {
-	duck:    ['09900', '99990', '99999', '09990', '00000'], // matches ducky_os.py FACES['duck']
+	duck:    ['00990', '09999', '99990', '99990', '09900'], // matches ducky_os.py FACES['duck']
 	cat:     ['90009', '99999', '90909', '99999', '90909'],
 	bunny:   ['09090', '09090', '99999', '99999', '09990'],
 	unicorn: ['00900', '09990', '99999', '99990', '09900'],

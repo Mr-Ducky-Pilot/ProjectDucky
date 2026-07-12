@@ -1,5 +1,6 @@
 <script lang="ts">
 	import FreePythonEditor from '$lib/components/FreePythonEditor.svelte';
+	import MicrobitPreview from '$lib/components/MicrobitPreview.svelte';
 	import FlashCodeButton from '$lib/components/FlashCodeButton.svelte';
 	import QrShareCard from '$lib/components/QrShareCard.svelte';
 	import YourTurn from '$lib/components/YourTurn.svelte';
@@ -69,7 +70,10 @@ while True:
 		💡 Uses a Grove RGB LED on pin 0 for the colour glow — everything else works without it.
 	</p>
 
-	<FreePythonEditor initial={INITIAL} bind:code />
+	<div class="grid gap-4 md:grid-cols-[1fr_auto]">
+		<FreePythonEditor initial={INITIAL} bind:code />
+		<div class="md:w-64"><MicrobitPreview {code} /></div>
+	</div>
 
 	<FlashCodeButton {code} onFlashed={complete} />
 

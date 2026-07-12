@@ -160,8 +160,8 @@
 				style="background: {$conn.preferMock ? 'var(--color-pond-blue)' : 'var(--color-mist)'};"
 			>
 				<span
-					class="absolute top-0.5 size-6 rounded-full bg-white shadow transition-transform"
-					style="transform: translateX({$conn.preferMock ? '22px' : '2px'});"
+					class="absolute top-0.5 left-0.5 size-6 rounded-full bg-white shadow transition-transform"
+					style="transform: translateX({$conn.preferMock ? '20px' : '0px'});"
 				></span>
 			</button>
 		</div>

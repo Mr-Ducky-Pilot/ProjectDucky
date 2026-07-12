@@ -1,5 +1,6 @@
 <script lang="ts">
 	import CodeEditor from '$lib/components/CodeEditor.svelte';
+	import RadioPairPreview from '$lib/components/RadioPairPreview.svelte';
 	import FlashCodeButton from '$lib/components/FlashCodeButton.svelte';
 	import SerialMonitor from '$lib/components/SerialMonitor.svelte';
 	import YourTurn from '$lib/components/YourTurn.svelte';
@@ -79,6 +80,8 @@ for row in range(5):
 	</div>
 
 	<CodeEditor template={TEMPLATE} bind:code bind:allFilled {mlSuggestions} />
+
+	<RadioPairPreview {code} />
 
 	<FlashCodeButton {code} disabled={!allFilled} onFlashed={complete} />
 

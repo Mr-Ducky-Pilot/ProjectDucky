@@ -32,13 +32,6 @@ A web app that runs in Chrome/Edge, with no install, that:
 - **Open-ended by structural design.** Missions are seeds, not assignments. Lab Mode is at every level. Failure isn't a state.
 - **Inclusive by default.** Theme is connection — universally appealing. Wide walls span art / music / games / science / movement / wellbeing simultaneously.
 
-### Out of Scope (MVP)
-- ❌ Native mobile app (web only)
-- ❌ Safari support (no Web Bluetooth/USB)
-- ❌ Backend / accounts (localStorage only at MVP)
-- ❌ Project sharing platform (local export only)
-- ❌ Real-time voice/audio streaming (Micro:bit hardware can't)
-- ❌ Teacher dashboard (V2 feature)
 
 ---
 

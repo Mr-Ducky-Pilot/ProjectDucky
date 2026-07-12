@@ -124,9 +124,12 @@
 
 	// Reactive width: grows with whichever is longer, the hint or what's
 	// actually been typed, so digits never get clipped once a value is longer
-	// than the original placeholder suggested.
+	// than the original placeholder suggested. The buffer has to be generous —
+	// box-sizing is border-box (Tailwind Preflight), so the input's own
+	// horizontal padding (px-2.5 = 20px, ~2.4ch at this font size) eats into
+	// whatever width we set here, not on top of it.
 	function gapWidthCh(placeholder: string, value: string): number {
-		return Math.max(4, Math.max(placeholder.length, value.length) + 2);
+		return Math.max(6, Math.max(placeholder.length, value.length) + 6);
 	}
 </script>
 
