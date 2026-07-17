@@ -462,5 +462,3 @@ L0: Flash → watch → "oh wow it does that!"
 L1: Slide → see board change → "I control it!"
 L2: Fill the gap → flash → board runs my code → "I MADE it do that!"
 ```
-
-The L2 moment of realisation — that the code they typed is literally running on the chip — is the payoff of the whole L0–L1 journey.
