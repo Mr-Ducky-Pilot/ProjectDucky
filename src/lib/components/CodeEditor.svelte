@@ -20,25 +20,57 @@
 
 	let { template, code = $bindable(''), allFilled = $bindable(false), mlSuggestions = {} }: Props = $props();
 
-	// Match ___ml(hint) first so it takes priority over ___(hint)
-	const GAP_RE = /___ml\(([^)]*)\)|___\(([^)]*)\)|___/g;
+	type Gap = { kind: 'gap' | 'gap-ml'; start: number; end: number; hint: string };
 
-	function parseTemplate(tmpl: string): { lines: LineSegment[][]; gapCount: number } {
-		const segments: LineSegment[] = [];
-		let gapIdx = 0;
-		const regex = new RegExp(GAP_RE.source, 'g');
-		let last = 0;
-		let m: RegExpExecArray | null;
-
-		while ((m = regex.exec(tmpl)) !== null) {
-			if (m.index > last) segments.push({ kind: 'code', text: tmpl.slice(last, m.index) });
-			if (m[0].startsWith('___ml')) {
-				segments.push({ kind: 'gap-ml', index: gapIdx++, placeholder: m[1] ?? '' });
-			} else {
-				segments.push({ kind: 'gap', index: gapIdx++, placeholder: m[2] ?? '' });
+	/**
+	 * Finds every `___(hint)` / `___ml(hint)` gap in the template by tracking
+	 * paren depth, rather than a regex like `\(([^)]*)\)` that stops at the
+	 * FIRST `)` — hints routinely contain their own balanced parens (e.g.
+	 * `___(snap())`, `___ml(call unlock() or reject())`), and a first-`)`
+	 * match truncates the gap early, leaving a stray `)` in the assembled
+	 * code right after it. That extra token is a real Python SyntaxError
+	 * once flashed, not just a cosmetic placeholder glitch.
+	 */
+	function findGaps(tmpl: string): Gap[] {
+		const gaps: Gap[] = [];
+		let i = 0;
+		while (i < tmpl.length) {
+			const idx = tmpl.indexOf('___', i);
+			if (idx === -1) break;
+			const isMl = tmpl.startsWith('___ml(', idx);
+			const isPlain = !isMl && tmpl.startsWith('___(', idx);
+			if (isMl || isPlain) {
+				const hintStart = idx + (isMl ? 6 : 4);
+				let depth = 1;
+				let j = hintStart;
+				while (j < tmpl.length && depth > 0) {
+					if (tmpl[j] === '(') depth++;
+					else if (tmpl[j] === ')') depth--;
+					if (depth > 0) j++;
+				}
+				if (depth === 0) {
+					gaps.push({ kind: isMl ? 'gap-ml' : 'gap', start: idx, end: j + 1, hint: tmpl.slice(hintStart, j) });
+					i = j + 1;
+					continue;
+				}
+				// Unbalanced parens somewhere in the hint — fall through to a bare gap below.
 			}
-			last = regex.lastIndex;
+			gaps.push({ kind: 'gap', start: idx, end: idx + 3, hint: '' });
+			i = idx + 3;
 		}
+		return gaps;
+	}
+
+	const gaps = findGaps(template);
+
+	function parseLines(tmpl: string, gs: Gap[]): LineSegment[][] {
+		const segments: LineSegment[] = [];
+		let last = 0;
+		gs.forEach((g, gapIdx) => {
+			if (g.start > last) segments.push({ kind: 'code', text: tmpl.slice(last, g.start) });
+			segments.push({ kind: g.kind, index: gapIdx, placeholder: g.hint });
+			last = g.end;
+		});
 		if (last < tmpl.length) segments.push({ kind: 'code', text: tmpl.slice(last) });
 
 		const lines: LineSegment[][] = [];
@@ -60,23 +92,19 @@
 		}
 		lines.push(currentLine);
 
-		return { lines, gapCount: gapIdx };
+		return lines;
 	}
 
-	// Compute leading whitespace for each ml gap so assembly can re-indent
-	function computeMlIndents(tmpl: string): Record<number, string> {
+	// Leading whitespace for each ml gap so assembly can re-indent every line
+	// of a multi-line answer to match where the gap sat in the template.
+	function computeMlIndents(tmpl: string, gs: Gap[]): Record<number, string> {
 		const result: Record<number, string> = {};
-		const regex = new RegExp(GAP_RE.source, 'g');
-		let gapIdx = 0;
-		let m: RegExpExecArray | null;
-		while ((m = regex.exec(tmpl)) !== null) {
-			if (m[0].startsWith('___ml')) {
-				const lineStart = tmpl.lastIndexOf('\n', m.index) + 1;
-				const before = tmpl.slice(lineStart, m.index);
-				result[gapIdx] = before.match(/^(\s*)/)?.[1] ?? '';
-			}
-			gapIdx++;
-		}
+		gs.forEach((g, gapIdx) => {
+			if (g.kind !== 'gap-ml') return;
+			const lineStart = tmpl.lastIndexOf('\n', g.start) + 1;
+			const before = tmpl.slice(lineStart, g.start);
+			result[gapIdx] = before.match(/^(\s*)/)?.[1] ?? '';
+		});
 		return result;
 	}
 
@@ -87,20 +115,14 @@
 	// "filled") but crashes the board at runtime with a Python NameError the
 	// moment it runs, with no way to surface that back to the browser. Flag
 	// those gaps so we can reject non-numeric input before it ever flashes.
-	function computeNumericGaps(tmpl: string): boolean[] {
-		const result: boolean[] = [];
-		const regex = new RegExp(GAP_RE.source, 'g');
-		let m: RegExpExecArray | null;
-		while ((m = regex.exec(tmpl)) !== null) {
-			const hint = m[0].startsWith('___ml') ? m[1] : m[2];
-			result.push(!m[0].startsWith('___ml') && NUMERIC_RE.test((hint ?? '').trim()));
-		}
-		return result;
+	function computeNumericGaps(gs: Gap[]): boolean[] {
+		return gs.map((g) => g.kind === 'gap' && NUMERIC_RE.test(g.hint.trim()));
 	}
 
-	const { lines, gapCount } = parseTemplate(template);
-	const mlIndents = computeMlIndents(template);
-	const numericGaps = computeNumericGaps(template);
+	const lines = parseLines(template, gaps);
+	const gapCount = gaps.length;
+	const mlIndents = computeMlIndents(template, gaps);
+	const numericGaps = computeNumericGaps(gaps);
 
 	function gapIsValid(idx: number, v: string): boolean {
 		const trimmed = v.trim();
@@ -120,19 +142,22 @@
 	let filledForMe = $state(new Set<number>());
 
 	const assembled = $derived.by(() => {
-		const regex = new RegExp(GAP_RE.source, 'g');
-		let i = 0;
-		return template.replace(regex, (match) => {
-			const idx = i++;
+		let out = '';
+		let last = 0;
+		gaps.forEach((g, idx) => {
+			out += template.slice(last, g.start);
 			const val = values[idx];
-			if (match.startsWith('___ml')) {
-				if (!val) return match;
-				const indent = mlIndents[idx] ?? '';
+			const original = template.slice(g.start, g.end);
+			if (g.kind === 'gap-ml') {
 				// First line keeps the template's leading indent; subsequent lines get it prepended
-				return val.split('\n').join('\n' + indent);
+				out += val ? val.split('\n').join('\n' + (mlIndents[idx] ?? '')) : original;
+			} else {
+				out += val || original;
 			}
-			return val || match;
+			last = g.end;
 		});
+		out += template.slice(last);
+		return out;
 	});
 
 	$effect(() => {
