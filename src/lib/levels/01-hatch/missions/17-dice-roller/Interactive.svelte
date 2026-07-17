@@ -26,7 +26,6 @@
 	let rollCount = $state(0);
 	let history = $state<number[]>([]);
 	let hasData = $state(false);
-	let lastMagnitude = $state(0);
 
 	const bits = $derived(
 		result ? DICE_BITS[result].split('').map((c) => c === '1') : Array(25).fill(false)
@@ -68,8 +67,10 @@
 				off = await connection.streamSensor('accel', ([x, y, z]) => {
 					hasData = true;
 					const mag = Math.hypot(x, y, z);
-					lastMagnitude = mag;
-					if (mag > 1.8 && !shaking && !rolling) {
+					// Matches the firmware's own "shake" preset threshold
+					// (ducky_os.py, `elif preset == 'shake'`) — was 1.8 here,
+					// stricter than the board's own definition of a shake.
+					if (mag > 1.5 && !shaking && !rolling) {
 						shaking = true;
 						void roll();
 						setTimeout(() => { shaking = false; }, 600);

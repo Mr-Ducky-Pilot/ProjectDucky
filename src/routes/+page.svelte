@@ -66,7 +66,7 @@
 				<span class="arrow">→</span>
 			</a>
 			<a href="/tutorial" class="btn btn-secondary">
-				<span>⚡</span> 10-stop quick tour
+				<span>⚡</span> 15-stop quick tour
 			</a>
 			<a href="/connect" class="btn btn-secondary">
 				<span class="mono">$</span> connect a micro:bit

@@ -24,44 +24,46 @@
 </script>
 
 <section class="px-5 py-8 sm:py-12">
-	<div class="mx-auto max-w-3xl">
-		<header class="flex items-end justify-between gap-4 sm:items-center">
-			<div>
-				<h1 class="text-3xl sm:text-4xl">The Journey</h1>
-				<p class="mt-1 text-(--color-night-soft)">Six little eggs. Pick whichever feels fun.</p>
-			</div>
-			<div class="hidden sm:block">
-				<SpeechBubble text={dialogue['journey.welcome']} typing={false} side="right" tone="hint" />
-			</div>
-		</header>
+	<div class="mx-auto max-w-5xl">
+		<div class="mx-auto max-w-3xl">
+			<header class="flex items-end justify-between gap-4 sm:items-center">
+				<div>
+					<h1 class="text-3xl sm:text-4xl">The Journey</h1>
+					<p class="mt-1 text-(--color-night-soft)">Six little eggs. Pick whichever feels fun.</p>
+				</div>
+				<div class="hidden sm:block">
+					<SpeechBubble text={dialogue['journey.welcome']} typing={false} side="right" tone="hint" />
+				</div>
+			</header>
 
-		<!-- Pet introduction card -->
-		<a
-			href="/pet"
-			class="mt-6 flex items-center gap-4 rounded-3xl bg-egg-cream p-4 shadow-soft transition hover:-translate-y-0.5 hover:bg-white"
-		>
-			<PetAvatar size={84} mood={isNamed($pet) ? 'excited' : 'curious'} />
-			<div>
-				{#if isNamed($pet)}
-					<p class="text-xs font-bold uppercase tracking-widest text-(--color-night-soft)">Your duck</p>
-					<p class="font-display text-xl font-extrabold text-night-ink">{$pet.name}</p>
-					<p class="text-sm text-(--color-night-soft)">
-						{$pet.friends.length} friend{$pet.friends.length === 1 ? '' : 's'} ·
-						{$pet.unlocks.levelsCompleted.length} level{$pet.unlocks.levelsCompleted.length === 1 ? '' : 's'} done
-					</p>
-				{:else}
-					<p class="text-xs font-bold uppercase tracking-widest text-(--color-night-soft)">No name yet</p>
-					<p class="font-display text-xl font-extrabold text-night-ink">Adopt your duck →</p>
-					<p class="text-sm text-(--color-night-soft)">Reach Level 3 to name it.</p>
-				{/if}
-			</div>
-		</a>
+			<!-- Pet introduction card -->
+			<a
+				href="/pet"
+				class="mt-6 flex items-center gap-4 rounded-3xl bg-egg-cream p-4 shadow-soft transition hover:-translate-y-0.5 hover:bg-white"
+			>
+				<PetAvatar size={84} mood={isNamed($pet) ? 'excited' : 'curious'} />
+				<div>
+					{#if isNamed($pet)}
+						<p class="text-xs font-bold uppercase tracking-widest text-(--color-night-soft)">Your duck</p>
+						<p class="font-display text-xl font-extrabold text-night-ink">{$pet.name}</p>
+						<p class="text-sm text-(--color-night-soft)">
+							{$pet.friends.length} friend{$pet.friends.length === 1 ? '' : 's'} ·
+							{$pet.unlocks.levelsCompleted.length} level{$pet.unlocks.levelsCompleted.length === 1 ? '' : 's'} done
+						</p>
+					{:else}
+						<p class="text-xs font-bold uppercase tracking-widest text-(--color-night-soft)">No name yet</p>
+						<p class="font-display text-xl font-extrabold text-night-ink">Adopt your duck →</p>
+						<p class="text-sm text-(--color-night-soft)">Reach Level 3 to name it.</p>
+					{/if}
+				</div>
+			</a>
+		</div>
 
-		<div class="mt-8">
+		<div class="mt-10">
 			<JourneyPath />
 		</div>
 
-		<div class="mt-12">
+		<div class="mx-auto mt-12 max-w-3xl">
 			<h2 class="mb-3 font-display text-lg font-bold text-night-ink">What have you explored?</h2>
 			<div class="flex flex-wrap gap-2">
 				{#each dims as d}

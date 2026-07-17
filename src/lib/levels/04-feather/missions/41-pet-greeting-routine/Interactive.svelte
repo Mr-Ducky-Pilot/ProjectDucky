@@ -3,7 +3,7 @@
 	import PetAvatar from '$lib/components/PetAvatar.svelte';
 	import YourTurn from '$lib/components/YourTurn.svelte';
 	import LedMatrix from '$lib/components/LedMatrix.svelte';
-	import { pet, updatePersonality } from '$lib/stores/pet';
+	import { pet, petLabel, updatePersonality } from '$lib/stores/pet';
 	import { spriteFor } from '$lib/data/petSprites';
 	import type { Mission } from '$lib/missions/types';
 
@@ -22,7 +22,7 @@
 
 	let face = $state($pet.personality.greeting.face || 'happy');
 	let tone = $state($pet.personality.greeting.tone || 'C4,200;E4,200;G4,300');
-	let scroll = $state($pet.personality.greeting.scroll || `Hi I am ${$pet.name}`);
+	let scroll = $state($pet.personality.greeting.scroll || `Hi I am ${$petLabel}`);
 
 	$effect(() => {
 		updatePersonality({ greeting: { face, tone, scroll } });

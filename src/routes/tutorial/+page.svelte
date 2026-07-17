@@ -24,7 +24,7 @@
 			</span>
 			<h1 class="mt-3 text-3xl sm:text-4xl">Quick Tour</h1>
 			<p class="mt-2 text-(--color-night-soft)">
-				10 hand-picked stops across every level — touch, sound, motion, a game, your pet, and a
+				15 hand-picked stops across every level — touch, sound, motion, a game, your pet, and a
 				peek at real code. The fastest way to see what Ducky can do.
 			</p>
 		</header>

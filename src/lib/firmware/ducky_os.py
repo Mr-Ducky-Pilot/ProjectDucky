@@ -575,6 +575,14 @@ while True:
             # L0-MENU-ONLY:END
         else:
             if logo_hold_start > 0 and not logo_held:
+                # Captured before the menu-confirm branch below can flip
+                # menu_mode, so a release that just *selected* a preset from
+                # the on-board menu doesn't also fall through and fire that
+                # preset's touch action (e.g. touch-logo's quack) on the same
+                # release. Kept outside the L0-MENU-ONLY markers so it still
+                # reads a real (permanently False) value once that block is
+                # stripped for the browser-driven build.
+                was_menu_mode = menu_mode
                 # L0-MENU-ONLY:BEGIN
                 if menu_mode:
                     menu_mode = False
@@ -582,7 +590,7 @@ while True:
                     state = {}
                     print('<L preset %s>' % preset)
                 # L0-MENU-ONLY:END
-                if not menu_mode:
+                if not was_menu_mode:
                     if preset == 'touch-logo':
                         music.pitch(1100, 70, wait=True)
                         music.pitch(750, 90, wait=True)

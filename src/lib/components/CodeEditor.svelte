@@ -80,8 +80,41 @@
 		return result;
 	}
 
+	const NUMERIC_RE = /^-?\d+(\.\d+)?$/;
+
+	// A blank whose hint (`___(10)`, `___(0.2)`) is itself a bare number is a
+	// numeric slot — a non-numeric answer there flashes fine (all blanks
+	// "filled") but crashes the board at runtime with a Python NameError the
+	// moment it runs, with no way to surface that back to the browser. Flag
+	// those gaps so we can reject non-numeric input before it ever flashes.
+	function computeNumericGaps(tmpl: string): boolean[] {
+		const result: boolean[] = [];
+		const regex = new RegExp(GAP_RE.source, 'g');
+		let m: RegExpExecArray | null;
+		while ((m = regex.exec(tmpl)) !== null) {
+			const hint = m[0].startsWith('___ml') ? m[1] : m[2];
+			result.push(!m[0].startsWith('___ml') && NUMERIC_RE.test((hint ?? '').trim()));
+		}
+		return result;
+	}
+
 	const { lines, gapCount } = parseTemplate(template);
 	const mlIndents = computeMlIndents(template);
+	const numericGaps = computeNumericGaps(template);
+
+	function gapIsValid(idx: number, v: string): boolean {
+		const trimmed = v.trim();
+		if (trimmed === '') return false;
+		if (numericGaps[idx] && !NUMERIC_RE.test(trimmed)) return false;
+		return true;
+	}
+
+	// Non-empty but not a valid number — distinct from "still blank" so a kid
+	// gets a nudge instead of a silently-stuck flash button.
+	function gapNeedsNumber(idx: number): boolean {
+		const v = (values[idx] ?? '').trim();
+		return numericGaps[idx] && v !== '' && !NUMERIC_RE.test(v);
+	}
 	const hasMlGaps = lines.some((line) => line.some((s) => s.kind === 'gap-ml'));
 	let values = $state(new Array(gapCount).fill(''));
 	let filledForMe = $state(new Set<number>());
@@ -104,10 +137,10 @@
 
 	$effect(() => {
 		code = assembled;
-		allFilled = values.every((v) => v.trim() !== '');
+		allFilled = values.every((v, i) => gapIsValid(i, v));
 	});
 
-	const blanksLeft = $derived(values.filter((v) => !v.trim()).length);
+	const blanksLeft = $derived(values.filter((v, i) => !gapIsValid(i, v)).length);
 
 	function autoResize(el: HTMLTextAreaElement) {
 		el.style.height = 'auto';
@@ -173,8 +206,12 @@
 						{:else if seg.kind === 'gap'}
 							<input
 								class="mx-0.5 inline-block min-w-[3ch] rounded-md bg-(--color-duck-yellow) px-2.5 py-1 font-mono text-sm font-bold text-(--color-night-ink) outline-none transition focus:ring-2 focus:ring-(--color-duck-yellow)/60 focus:ring-offset-1 focus:ring-offset-(--color-night-ink)"
+								class:ring-2={gapNeedsNumber(seg.index)}
+								class:ring-(--color-sunset-coral)={gapNeedsNumber(seg.index)}
 								style="width: {gapWidthCh(seg.placeholder, values[seg.index] ?? '')}ch;"
 								placeholder={seg.placeholder || '?'}
+								inputmode={numericGaps[seg.index] ? 'decimal' : 'text'}
+								title={gapNeedsNumber(seg.index) ? 'This one needs a number' : undefined}
 								bind:value={values[seg.index]}
 							/>
 						{:else if seg.kind === 'gap-ml'}
@@ -220,8 +257,12 @@
 						{:else}
 							<input
 								class="mx-0.5 inline-block min-w-[3ch] rounded-md bg-(--color-duck-yellow) px-2.5 py-1 font-mono text-sm font-bold text-(--color-night-ink) outline-none transition focus:ring-2 focus:ring-(--color-duck-yellow)/60 focus:ring-offset-1 focus:ring-offset-(--color-night-ink)"
+								class:ring-2={gapNeedsNumber(seg.index)}
+								class:ring-(--color-sunset-coral)={gapNeedsNumber(seg.index)}
 								style="width: {gapWidthCh(seg.placeholder, values[seg.index] ?? '')}ch;"
 								placeholder={seg.placeholder || '?'}
+								inputmode={numericGaps[seg.index] ? 'decimal' : 'text'}
+								title={gapNeedsNumber(seg.index) ? 'This one needs a number' : undefined}
 								bind:value={values[seg.index]}
 							/>
 						{/if}

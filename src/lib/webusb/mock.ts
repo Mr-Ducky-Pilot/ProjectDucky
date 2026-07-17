@@ -22,9 +22,24 @@ export function createMockAdapter(): DeviceAdapter {
 			let values: number[];
 			const t = Date.now() / 1000;
 			switch (sensor) {
-				case 'accel':
-					values = [Math.sin(t * 1.7) * 0.4, Math.cos(t * 1.3) * 0.4, 0.95 + Math.sin(t) * 0.05];
+				case 'accel': {
+					// Idle wobble most of the time, with a brief shake burst every
+					// ~5s so missions that gate on a real shake gesture (e.g. the
+					// dice roller's `magnitude > threshold` check) are demoable
+					// without real hardware, not just via their manual fallback button.
+					const cycle = t % 5;
+					if (cycle > 4.7) {
+						const s = (cycle - 4.7) / 0.3;
+						values = [
+							Math.sin(t * 40) * 2.2 * s,
+							Math.cos(t * 35) * 2.2 * s,
+							0.95 + Math.sin(t * 45) * 1.8 * s
+						];
+					} else {
+						values = [Math.sin(t * 1.7) * 0.4, Math.cos(t * 1.3) * 0.4, 0.95 + Math.sin(t) * 0.05];
+					}
 					break;
+				}
 				case 'mic':
 					// random-walk-ish 0..255
 					values = [Math.max(0, Math.min(255, 70 + Math.random() * 60))];

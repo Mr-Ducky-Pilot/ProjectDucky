@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
 	import PetAvatar from './PetAvatar.svelte';
 	import JourneyEgg from './JourneyEgg.svelte';
 	import { LEVELS } from '$lib/data/journey';
@@ -42,53 +41,40 @@
 </script>
 
 <div class="relative">
-	<!-- snaking SVG path behind the eggs -->
-	<svg
-		class="pointer-events-none absolute left-0 top-0 h-full w-full"
-		viewBox="0 0 320 1080"
-		preserveAspectRatio="none"
+	<!-- Center spine: left edge of the badge column on mobile, dead center at md+ -->
+	<div
+		class="absolute top-4 bottom-4 left-8 w-0.5 -translate-x-1/2 md:left-1/2"
+		style="background-image: linear-gradient(to bottom, rgb(31 35 51 / 0.14) 0 10px, transparent 10px 18px); background-size: 2px 18px;"
 		aria-hidden="true"
-	>
-		<path
-			d="M 60 30 C 200 90, 280 120, 220 180 S 50 280, 130 350 S 280 460, 200 540 S 40 660, 140 740 S 280 860, 180 940"
-			fill="none"
-			stroke="rgba(28,31,46,0.12)"
-			stroke-width="6"
-			stroke-linecap="round"
-			stroke-dasharray="2 14"
-		/>
-	</svg>
+	></div>
 
-	<ol class="relative flex flex-col gap-5">
+	<ol class="relative flex flex-col gap-10 md:gap-6">
 		{#each LEVELS as level, i}
 			<li class="relative">
 				<JourneyEgg
 					emoji={level.emoji}
 					title={level.title}
-					blurb={level.tagline}
+					tagline={level.tagline}
+					philosophy={level.philosophy}
 					color={level.color}
 					href={level.available ? `/level/${level.id}` : '/journey'}
 					locked={!level.available}
 					index={i}
+					align={i % 2 === 0 ? 'right' : 'left'}
+					done={completedPerLevel[level.id] ?? 0}
+					total={totalsPerLevel[level.id] ?? 0}
 				/>
-				{#if totalsPerLevel[level.id]}
-					<span
-						class="absolute right-3 top-3 rounded-full bg-white/70 px-2 py-0.5 text-[10px] font-bold tracking-wide text-night-soft"
-					>
-						{completedPerLevel[level.id] ?? 0}/{totalsPerLevel[level.id]}
-					</span>
-				{/if}
 			</li>
 		{/each}
 	</ol>
 
 	{#if showDuck}
 		<div
-			class="pointer-events-none absolute -right-2 z-10 transition-all duration-700 ease-out"
-			style="top: calc({(duckPosition / Math.max(LEVELS.length - 1, 1)) * 100}% - 40px);"
+			class="pointer-events-none absolute left-8 z-20 transition-all duration-700 ease-out md:left-1/2"
+			style="top: calc({(duckPosition / Math.max(LEVELS.length - 1, 1)) * 100}% - 40px); transform: translateX(calc(-50% + 2.75rem));"
 			aria-hidden="true"
 		>
-			<PetAvatar mood="excited" size={86} />
+			<PetAvatar mood="excited" size={64} />
 		</div>
 	{/if}
 </div>

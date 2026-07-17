@@ -49,7 +49,7 @@ while True:
 
 	<div class="rounded-xl bg-(--color-mist) p-4 text-sm text-(--color-night-soft)">
 		<strong>After flashing:</strong> Two players, one chip. Player A presses button A,
-		player B presses button B. The screen shows who's leading. First to WIN presses gets the trophy message.
+		player B presses button B. The screen flashes each press so you can keep count. First to WIN presses gets the trophy message.
 	</div>
 
 	<YourTurn challenges={[

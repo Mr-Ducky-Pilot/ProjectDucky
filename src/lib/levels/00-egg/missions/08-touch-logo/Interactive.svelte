@@ -8,26 +8,35 @@
 	let touches = $state(0);
 	let audioOn = $state(true);
 
+	// Shared across taps — a fresh AudioContext per tap is never closed by
+	// osc.stop() (that only stops the oscillator, not the context) and this
+	// mission is built around repeat tapping ("Quacks so far: N").
+	let audioCtx: AudioContext | null = null;
+	function getCtx(): AudioContext | null {
+		try {
+			audioCtx ??= new AudioContext();
+			return audioCtx;
+		} catch {
+			return null;
+		}
+	}
+
 	/** Descending sawtooth quack via Web Audio API — no audio file needed. */
 	function playBrowserQuack() {
 		if (!audioOn) return;
-		try {
-			const ctx = new AudioContext();
-			const osc = ctx.createOscillator();
-			const gain = ctx.createGain();
-			osc.connect(gain);
-			gain.connect(ctx.destination);
-			osc.type = 'sawtooth';
-			osc.frequency.setValueAtTime(700, ctx.currentTime);
-			osc.frequency.exponentialRampToValueAtTime(180, ctx.currentTime + 0.28);
-			gain.gain.setValueAtTime(0.35, ctx.currentTime);
-			gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.32);
-			osc.start(ctx.currentTime);
-			osc.stop(ctx.currentTime + 0.35);
-			// ctx auto-closes when osc stops
-		} catch {
-			/* AudioContext not available (e.g. SSR) */
-		}
+		const ctx = getCtx();
+		if (!ctx) return;
+		const osc = ctx.createOscillator();
+		const gain = ctx.createGain();
+		osc.connect(gain);
+		gain.connect(ctx.destination);
+		osc.type = 'sawtooth';
+		osc.frequency.setValueAtTime(700, ctx.currentTime);
+		osc.frequency.exponentialRampToValueAtTime(180, ctx.currentTime + 0.28);
+		gain.gain.setValueAtTime(0.35, ctx.currentTime);
+		gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.32);
+		osc.start(ctx.currentTime);
+		osc.stop(ctx.currentTime + 0.35);
 	}
 
 	function quack() {
@@ -41,7 +50,11 @@
 		const off = connection.onEvent((e) => {
 			if (e.type === 'touch' && e.phase === 'down') quack();
 		});
-		return off;
+		return () => {
+			off();
+			void audioCtx?.close();
+			audioCtx = null;
+		};
 	});
 </script>
 

@@ -14,7 +14,7 @@ const meta: MissionMeta = {
 	dimension: 'story',
 	estMinutes: 8,
 	remixPrompts: [
-		'Make all six answers positive — see if friends notice.',
+		'Make all four answers positive — see if friends notice.',
 		'Add specific in-jokes only your best friend would get.',
 		'Replace the text with five emoji answers.'
 	]
